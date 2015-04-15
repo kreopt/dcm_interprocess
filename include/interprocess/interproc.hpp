@@ -58,7 +58,7 @@ namespace interproc {
         virtual void broadcast(const buffer_type &_buf) = 0;
         // TODO: send to single instance
 
-        std::function<void(buffer_type &&_buf)> on_message;
+        std::function<void(const buffer_type &_buf)> on_message;
         std::function<void(std::shared_ptr<session<buffer_type>>)> on_connect;
     };
 

@@ -40,7 +40,7 @@ namespace interproc {
 
                 eof_ = false;
                 this->reader_->on_success = [this](buffer_type &&_buffer){
-                    if (this->on_message) this->on_message(std::move(_buffer));
+                    if (this->on_message) this->on_message(_buffer);
                     if (!eof_) {
                         this->reader_->read();
                     }
@@ -74,7 +74,7 @@ namespace interproc {
                 return socket_;
             }
 
-            std::function<void(buffer_type && _buf)> on_message;
+            std::function<void(const buffer_type & _buf)> on_message;
             std::function<void(std::shared_ptr<receiver_session<socket_type, buffer_type>> _session)> on_error;
             std::function<void(std::shared_ptr<receiver_session<socket_type, buffer_type>> _session)> on_connect;
         };
