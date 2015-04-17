@@ -12,7 +12,7 @@
 namespace interproc {
     namespace streamsocket {
         template<typename socket_type, typename buffer_type = interproc::buffer >
-        class receiver_session : public interproc::session<buffer_type>, public std::enable_shared_from_this<receiver_session<socket_type>> {
+        class listener_session : public interproc::session<buffer_type>, public std::enable_shared_from_this<listener_session<socket_type>> {
         private:
             std::shared_ptr<socket_type> socket_;
             bool eof_;
@@ -23,7 +23,7 @@ namespace interproc {
         public:
 
             // Constructor
-            explicit receiver_session(asio::io_service &io_service)
+            explicit listener_session(asio::io_service &io_service)
                     : socket_(std::make_shared<socket_type>(io_service)) {
 
                 started_ = false;
@@ -47,7 +47,7 @@ namespace interproc {
                 };
             }
 
-            virtual ~receiver_session() {
+            virtual ~listener_session() {
                 if (socket_->is_open()) {
                     socket_->close();
                 }
@@ -75,8 +75,8 @@ namespace interproc {
             }
 
             std::function<void(const buffer_type & _buf)> on_message;
-            std::function<void(std::shared_ptr<receiver_session<socket_type, buffer_type>> _session)> on_error;
-            std::function<void(std::shared_ptr<receiver_session<socket_type, buffer_type>> _session)> on_connect;
+            std::function<void(std::shared_ptr<listener_session<socket_type, buffer_type>> _session)> on_error;
+            std::function<void(std::shared_ptr<listener_session<socket_type, buffer_type>> _session)> on_connect;
         };
     }
 }

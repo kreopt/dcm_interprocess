@@ -5,16 +5,23 @@
 #include <type_traits>
 #include <functional>
 #include <memory>
-#include <asio/error_code.hpp>
 
 namespace interproc {
     using block_size_t = uint32_t;
     using byte_t = char;
-    using buffer = std::basic_string<byte_t>;
     using ibufstream = std::basic_istringstream<byte_t>;
     using obufstream = std::basic_ostringstream<byte_t>;
 
     const uint32_t BLOCK_SIZE_SIZE = sizeof(block_size_t);
+
+    class buffer : public std::basic_string<byte_t> {
+    public:
+        using std::basic_string<byte_t>::basic_string;
+
+        inline byte_t* raw_data(){
+            return &this->front();
+        }
+    };
 
     template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
     inline buffer to_buffer(T v){
@@ -23,7 +30,8 @@ namespace interproc {
 
     template <>
     inline buffer to_buffer(bool v){
-        return buffer(static_cast<byte_t>(v?0:1), 1);
+        byte_t b = v?'\0':'\1';
+        return buffer(&b, 1);
     }
 
     inline void write_size(obufstream& _s, block_size_t _sz){
@@ -35,6 +43,7 @@ namespace interproc {
         _s.read(lb, interproc::BLOCK_SIZE_SIZE);
     }
 
+
     template <typename buffer_type = interproc::buffer >
     class session{
     public:
@@ -43,17 +52,17 @@ namespace interproc {
     };
 
     template <typename buffer_type = interproc::buffer >
-    class receiver {
+    class listener {
     public:
         typedef typename std::remove_reference<buffer_type>::type buf_type;
 
-        virtual ~receiver() {}
+        virtual ~listener() {}
 
         virtual void start() = 0;
 
         virtual void stop() = 0;
 
-        virtual void join() = 0;
+        virtual void wait_until_stopped() = 0;
 
         virtual void broadcast(const buffer_type &_buf) = 0;
         // TODO: send to single instance
@@ -71,7 +80,9 @@ namespace interproc {
 
         virtual void send(const buffer_type &_buf) = 0;
 
-        virtual void close(const asio::error_code &error = asio::error_code()) = 0;
+        virtual void close() = 0;
+
+        //TODO: on_error function
     };
 }
 #endif //_DCM_INTERPROC_HPP_

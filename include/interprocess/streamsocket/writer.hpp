@@ -9,7 +9,7 @@
 namespace interproc {
     namespace streamsocket {
         // TODO: timeouts
-        template<typename socket_type>
+        template<typename socket_type, typename buffer_type = interproc::buffer>
         class writer {
         protected:
             std::shared_ptr<socket_type> socket_;
@@ -19,7 +19,7 @@ namespace interproc {
                 socket_ = _socket;
             }
 
-            void write(const interproc::buffer &_buf) {
+            void write(const buffer_type &_buf) {
                 asio::async_write(*socket_, asio::buffer(_buf.data(), _buf.size()),
                         std::bind(&writer<socket_type>::handle_write, this, std::placeholders::_1));
             }

@@ -18,8 +18,8 @@ using asio::ip::tcp;
 namespace interproc {
     namespace streamsocket {
 
-        template<typename protocol_type>
-        class sender_impl : public sender<>,
+        template<typename protocol_type, typename buffer_type = interproc::buffer>
+        class sender_impl : public sender<buffer_type>,
                             public std::enable_shared_from_this<sender_impl<protocol_type>> {
         private:
             using socket_type = typename protocol_type::socket;
@@ -32,8 +32,8 @@ namespace interproc {
             volatile size_t pending_count_;
             std::mutex pending_ops_mtx_;
             std::mutex can_close_mtx_;
-            std::shared_ptr<reader<socket_type>> reader_;
-            std::shared_ptr<writer<socket_type>> writer_;
+            std::shared_ptr<reader<socket_type, buffer_type>> reader_;
+            std::shared_ptr<writer<socket_type, buffer_type>> writer_;
             volatile bool stopped_;
             volatile bool connected_;
 
@@ -89,6 +89,9 @@ namespace interproc {
                 std::cout << "destroy sender" << std::endl;
                 can_close_mtx_.unlock();
                 close();
+                if (client_thread_.joinable()) {
+                    client_thread_.join();
+                }
             }
 
             virtual void connect() override {
@@ -111,7 +114,7 @@ namespace interproc {
                 });
             }
 
-            virtual void send(const buffer &_buf) override {
+            virtual void send(const buffer_type &_buf) override {
                 if (connected_) {
                     std::cout << "try send" << std::endl;
                     {
@@ -125,7 +128,7 @@ namespace interproc {
                 }
             }
 
-            virtual void close(const asio::error_code &error = asio::error_code()) override {
+            virtual void close() override {
                 std::cerr << "close sender" << std::endl;
                 stopped_ = true;
                 can_close_mtx_.lock();
@@ -135,23 +138,14 @@ namespace interproc {
                 if (!io_service_->stopped()) {
                     io_service_->stop();
                 }
-                if (error) {
-                    std::cerr << error.message() << std::endl;
-                }
             }
         };
 
-        using tcp_sender = sender_impl<asio::ip::tcp>;
-        using unix_sender = sender_impl<asio::local::stream_protocol>;
+        template <typename buffer_type>
+        using tcp_sender = sender_impl<asio::ip::tcp, buffer_type>;
 
-        inline std::shared_ptr<sender<>> make_sender(streamsocket_type _type, const std::string &_ep) {
-            switch (_type) {
-                case streamsocket_type::unix:
-                    return std::make_shared<unix_sender>(_ep);
-                case streamsocket_type::tcp:
-                    return std::make_shared<tcp_sender>(_ep);
-            }
-        };
+        template <typename buffer_type>
+        using unix_sender = sender_impl<asio::local::stream_protocol, buffer_type>;
     }
 }
 #endif

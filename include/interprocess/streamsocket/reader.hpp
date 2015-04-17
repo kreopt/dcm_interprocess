@@ -12,11 +12,11 @@
 namespace interproc {
     namespace streamsocket {
         // TODO: timeouts
-        template<typename socket_type>
+        template<typename socket_type, typename buffer_type = interproc::buffer>
         class reader {
             using handler_t = std::function<void(const asio::error_code &_error, const long unsigned int&)>;
         protected:
-            interproc::buffer buffer_;
+            buffer buffer_;
             asio::streambuf response_;
             bool streambuf_read_;
             std::shared_ptr<socket_type> socket_;
@@ -27,7 +27,6 @@ namespace interproc {
                 default_handler_ = std::bind(&interproc::streamsocket::reader<socket_type>::handle_read, this, std::placeholders::_1);
             };
 
-            // TODO: protect against concurrent read into the same buffer
             void read(int _size = -1, handler_t _handler = nullptr) {
                 if (_size >= 0) {
                     streambuf_read_ = false;
@@ -49,12 +48,15 @@ namespace interproc {
             void handle_read(const asio::error_code &_error) {
                 if (!_error) {
                     if (on_success) {
+                        buffer_type data;
                         if (streambuf_read_) {
                             buffer_.clear();
                             asio::streambuf::const_buffers_type bufs = response_.data();
-                            buffer_ = interproc::buffer(asio::buffers_begin(bufs), asio::buffers_begin(bufs) + response_.size());
+                            data = buffer_type(asio::buffers_begin(bufs), asio::buffers_begin(bufs) + response_.size());
+                        } else {
+                            data = buffer_type(buffer_.data(), buffer_.size());
                         }
-                        on_success(std::move(buffer_));
+                        on_success(std::move(data));
                     }
                 } else {
                     if (on_fail) on_fail(_error);
@@ -62,7 +64,7 @@ namespace interproc {
             }
 
             std::function<void(const asio::error_code &)> on_fail;
-            std::function<void(interproc::buffer &&_buffer)> on_success;
+            std::function<void(buffer_type &&_buffer)> on_success;
         };
     }
 }
