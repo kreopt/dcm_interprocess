@@ -18,8 +18,12 @@ namespace interproc {
     public:
         using std::basic_string<byte_t>::basic_string;
 
-        inline byte_t* raw_data(){
+        virtual inline byte_t* data(){
             return &this->front();
+        }
+
+        virtual inline const byte_t* data() const{
+            return std::basic_string<byte_t>::data();
         }
     };
 
