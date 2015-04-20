@@ -26,13 +26,13 @@ namespace interproc {
     namespace streamsocket {
 
         // tcp_server class
-        template <typename protocol_type, typename buffer_type, template <typename, typename> class session_type_tpl = interproc::streamsocket::listener_session>
+        template <typename protocol_type, typename buffer_type = interproc::buffer, template <typename, typename> class session_type_tpl = interproc::streamsocket::listener_session>
         class listener_impl : public interproc::listener<buffer_type> {
         private:
 
             using acceptor_type = typename protocol_type::acceptor;
             using socket_type = typename protocol_type::socket;
-            using session_type = session_type_tpl<typename protocol_type::socket, typename interproc::buffer>;
+            using session_type = session_type_tpl<typename protocol_type::socket, buffer_type>;
 
             std::shared_ptr<asio::io_service> io_service_;
             std::shared_ptr<acceptor_type> acceptor_;

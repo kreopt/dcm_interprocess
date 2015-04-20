@@ -38,6 +38,10 @@ namespace interproc {
         return buffer(&b, 1);
     }
 
+    inline buffer to_buffer(const std::string &_s){
+        return buffer(_s.data(), _s.size());
+    }
+
     inline void write_size(obufstream& _s, block_size_t _sz){
         _s.write(reinterpret_cast<interproc::byte_t*>(&_sz), interproc::BLOCK_SIZE_SIZE);
     }
