@@ -29,9 +29,6 @@ namespace interproc {
             std::shared_ptr<socket_type> socket_;
             typename protocol_type::endpoint endpoint_;
             std::thread client_thread_;
-            volatile size_t pending_count_;
-            std::mutex pending_ops_mtx_;
-            std::mutex can_close_mtx_;
             std::shared_ptr<reader<socket_type, buffer_type>> reader_;
             std::shared_ptr<writer<socket_type, buffer_type>> writer_;
             volatile bool stopped_;
@@ -46,7 +43,7 @@ namespace interproc {
                     connected_ = true;
                     this->reader_->read();
                 } else {
-                    //std::cerr << "DCM Client failed to connect: " << error.message() << std::endl;
+                    std::cerr << "DCM Client failed to connect: " << error.message() << std::endl;
                     connected_ = false;
                 }
             }
@@ -54,7 +51,6 @@ namespace interproc {
         public:
             // Constructor
             explicit sender_impl(const std::string &_endpoint) {
-                pending_count_ = 0;
                 stopped_ = true;
                 connected_ = false;
                 io_service_ = std::make_shared<asio::io_service>();
@@ -68,33 +64,21 @@ namespace interproc {
                     if (error) {
                         std::cerr << error.message() << std::endl;
                     }
-                    std::lock_guard<std::mutex> lck(pending_ops_mtx_);
-                    can_close_mtx_.unlock();
-                    pending_count_ = 0;
-                    //close();    // TODO: try to reconnect
                     io_service_->stop();
                 };;
                 this->writer_->on_success = [this]() {
-                    std::lock_guard<std::mutex> lck(pending_ops_mtx_);
-                    pending_count_--;
-                    if (pending_count_ <= 0) {
-                        can_close_mtx_.unlock();
-                    } else {
-                        can_close_mtx_.try_lock();
-                    }
                 };
             }
 
             ~sender_impl() {
                 std::cout << "destroy sender" << std::endl;
-                can_close_mtx_.unlock();
                 close();
-                if (client_thread_.joinable()) {
-                    client_thread_.join();
-                }
             }
 
             virtual void connect() override {
+                if (!stopped_) {
+                    return;
+                }
                 stopped_ = false;
                 client_thread_ = std::thread([this]() {
                     while (!stopped_) {
@@ -107,8 +91,8 @@ namespace interproc {
 
                         socket_->async_connect(endpoint_, std::bind(&sender_impl<protocol_type>::handle_connect, this->shared_from_this(), std::placeholders::_1));
                         io_service_->run();
-                        can_close_mtx_.unlock();
                         connected_ = false;
+                        std::cout << "disconnected" << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(1));
                     }
                 });
@@ -117,11 +101,6 @@ namespace interproc {
             virtual void send(const buffer_type &_buf) override {
                 if (connected_) {
                     std::cout << "try send" << std::endl;
-                    {
-                        std::lock_guard<std::mutex> lck(pending_ops_mtx_);
-                        pending_count_++;
-                    }
-                    can_close_mtx_.try_lock();
                     this->writer_->write(_buf);
                 } else {
                     std::cout << "failed to send: client disconnected" << std::endl;
@@ -130,13 +109,16 @@ namespace interproc {
 
             virtual void close() override {
                 std::cerr << "close sender" << std::endl;
+                // TODO: wait pending operations if necessary
                 stopped_ = true;
-                can_close_mtx_.lock();
                 if (socket_->is_open()) {
                     socket_->close();
                 }
                 if (!io_service_->stopped()) {
                     io_service_->stop();
+                }
+                if (client_thread_.joinable()) {
+                    client_thread_.join();
                 }
             }
         };
