@@ -43,7 +43,7 @@ namespace interproc {
                     connected_ = true;
                     this->reader_->read();
                 } else {
-                    std::cerr << "DCM Client failed to connect: " << error.message() << std::endl;
+                    //std::cerr << "DCM Client failed to connect: " << error.message() << std::endl;
                     connected_ = false;
                 }
             }
@@ -92,7 +92,7 @@ namespace interproc {
                         socket_->async_connect(endpoint_, std::bind(&sender_impl<protocol_type>::handle_connect, this->shared_from_this(), std::placeholders::_1));
                         io_service_->run();
                         connected_ = false;
-                        std::cout << "disconnected" << std::endl;
+                        //std::cout << "disconnected" << std::endl;
                         std::this_thread::sleep_for(std::chrono::seconds(1));
                     }
                 });

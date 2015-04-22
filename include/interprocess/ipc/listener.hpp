@@ -1,7 +1,7 @@
 #ifndef INTERPROCESS_LISTENER_HPP
 #define INTERPROCESS_LISTENER_HPP
 
-#include <interprocess/interproc.hpp>
+#include "../interproc.hpp"
 
 namespace interproc {
     namespace ipc {

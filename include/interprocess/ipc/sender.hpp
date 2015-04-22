@@ -1,7 +1,7 @@
 #ifndef INTERPROCESS_SENDER_HPP
 #define INTERPROCESS_SENDER_HPP
 
-#include <interprocess/interproc.hpp>
+#include "../interproc.hpp"
 
 namespace interproc {
     namespace ipc {
