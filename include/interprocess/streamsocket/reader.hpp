@@ -28,6 +28,7 @@ namespace interproc {
             };
 
             void read(int _size = -1, handler_t _handler = nullptr) {
+                buffer_.clear();
                 if (_size >= 0) {
                     streambuf_read_ = false;
                     buffer_.resize(_size);
@@ -53,6 +54,7 @@ namespace interproc {
                             buffer_.clear();
                             asio::streambuf::const_buffers_type bufs = response_.data();
                             data = buffer_type(asio::buffers_begin(bufs), asio::buffers_begin(bufs) + response_.size());
+                            response_.consume(response_.size());
                         } else {
                             data = buffer_type(buffer_.data(), buffer_.size());
                         }
