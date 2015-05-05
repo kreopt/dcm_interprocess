@@ -12,14 +12,27 @@
 namespace interproc {
     namespace streamsocket {
         template<typename socket_type, typename buffer_type = interproc::buffer >
-        class listener_session : public interproc::session<buffer_type>, public std::enable_shared_from_this<listener_session<socket_type>> {
+        class listener_session : public interproc::session<buffer_type>,
+                                 public std::enable_shared_from_this<interproc::session<buffer_type>> {
         private:
             std::shared_ptr<socket_type> socket_;
+        protected:
             bool eof_;
             bool started_;
-        protected:
+
             std::shared_ptr<reader<socket_type>> reader_;
             std::shared_ptr<writer<socket_type>> writer_;
+
+            virtual void read() {
+                // Check input buffer
+                this->reader_->read();
+            }
+            virtual void read_success_handler(buffer_type &&_buffer) {
+                if (this->on_message) this->on_message(_buffer);
+                if (!eof_) {
+                    this->reader_->read();
+                }
+            }
         public:
 
             // Constructor
@@ -39,12 +52,7 @@ namespace interproc {
                 };
 
                 eof_ = false;
-                this->reader_->on_success = [this](buffer_type &&_buffer){
-                    if (this->on_message) this->on_message(_buffer);
-                    if (!eof_) {
-                        this->reader_->read();
-                    }
-                };
+                this->reader_->on_success = std::bind(&listener_session::read_success_handler, this, std::placeholders::_1);
             }
 
             virtual ~listener_session() {
@@ -63,8 +71,7 @@ namespace interproc {
 
             // Session operations
             virtual void start() {
-                // Check input buffer
-                this->reader_->read();
+                read();
                 started_ = true;
                 if (on_connect) on_connect(this->shared_from_this());
             }
@@ -75,8 +82,8 @@ namespace interproc {
             }
 
             std::function<void(const buffer_type & _buf)> on_message;
-            std::function<void(std::shared_ptr<listener_session<socket_type, buffer_type>> _session)> on_error;
-            std::function<void(std::shared_ptr<listener_session<socket_type, buffer_type>> _session)> on_connect;
+            std::function<void(std::shared_ptr<interproc::session<buffer_type>> _session)> on_error;
+            std::function<void(std::shared_ptr<interproc::session<buffer_type>> _session)> on_connect;
         };
     }
 }

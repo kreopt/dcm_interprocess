@@ -36,12 +36,12 @@ namespace interproc {
 
             std::shared_ptr<asio::io_service> io_service_;
             std::shared_ptr<acceptor_type> acceptor_;
-            std::set<std::shared_ptr<session_type>> sessions_;
+            std::set<std::shared_ptr<interproc::session<buffer_type>>> sessions_;
             std::thread server_thread_;
             asio::signal_set signals_;
 
             // Event handlers
-            void handle_accept(std::shared_ptr<session_type> session, const asio::error_code &error) {
+            void handle_accept(std::shared_ptr<interproc::session<buffer_type>> session, const asio::error_code &error) {
                 std::cout << "client connected" << std::endl;
                 if (!error) {
                     session->start();
@@ -53,7 +53,7 @@ namespace interproc {
             void start_accept() {
                 auto new_session = std::make_shared<session_type>(*io_service_);
                 new_session->on_message = this->on_message;
-                new_session->on_error = [this](std::shared_ptr<session_type> _session) {
+                new_session->on_error = [this](std::shared_ptr<interproc::session<buffer_type>> _session) {
                     sessions_.erase(_session);
                 };
                 new_session->on_connect = this->on_connect;

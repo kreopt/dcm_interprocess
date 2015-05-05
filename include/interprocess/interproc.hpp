@@ -25,6 +25,8 @@ namespace interproc {
         virtual inline const byte_t* data() const{
             return std::basic_string<byte_t>::data();
         }
+
+        // TODO: operator std::string
     };
 
     template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
@@ -57,6 +59,7 @@ namespace interproc {
     public:
         virtual ~session() {};
         virtual void send(const buffer_type &_buf) = 0;
+        virtual void start() = 0;
     };
 
     template <typename buffer_type = interproc::buffer >
