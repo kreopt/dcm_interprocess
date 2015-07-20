@@ -28,6 +28,8 @@ namespace interproc {
         // tcp_server class
         template <typename protocol_type, typename buffer_type = interproc::buffer, template <typename, typename> class session_type_tpl = interproc::streamsocket::listener_session>
         class listener_impl : public interproc::listener<buffer_type> {
+        public:
+            using ptr = listener_impl<protocol_type, buffer_type, session_type_tpl>;
         private:
 
             using acceptor_type = typename protocol_type::acceptor;
@@ -64,17 +66,6 @@ namespace interproc {
                                 this, new_session, std::placeholders::_1));
             }
 
-            void do_await_stop() {
-                signals_.async_wait([this](std::error_code /*ec*/, int /*signo*/) {
-                    // The receiver is stopped by cancelling all outstanding asynchronous
-                    // operations. Once all operations have finished the io_service::run()
-                    // call will exit.
-                    acceptor_->close();
-                    sessions_.clear();
-                    stop();
-                });
-            }
-
         public:
             using endpoint_type = typename protocol_type::endpoint;
 
@@ -86,12 +77,6 @@ namespace interproc {
                 std::filesystem::remove(_endpoint);
                 endpoint_type ep = interproc::make_endpoint<endpoint_type>(_endpoint, *io_service_);
                 acceptor_ = std::make_shared<acceptor_type>(*io_service_, ep);
-                signals_.add(SIGINT);
-                signals_.add(SIGTERM);
-#if defined(SIGQUIT)
-                signals_.add(SIGQUIT);
-#endif // defined(SIGQUIT)
-                do_await_stop();
             }
 
             ~listener_impl() {

@@ -21,6 +21,8 @@ namespace interproc {
         template<typename protocol_type, typename buffer_type = interproc::buffer>
         class sender_impl : public sender<buffer_type>,
                             public std::enable_shared_from_this<sender_impl<protocol_type>> {
+        public:
+            using ptr = sender_impl<protocol_type, buffer_type>;
         private:
             using socket_type = typename protocol_type::socket;
             using endpoint_type = typename protocol_type::endpoint;
