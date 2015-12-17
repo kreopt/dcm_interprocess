@@ -33,7 +33,7 @@ namespace interproc {
                     streambuf_read_ = false;
                     buffer_.resize(_size);
                     if (_size) {
-                        char *bufstart = &buffer_[0];
+                        byte_t *bufstart = &buffer_[0];
                         asio::async_read(*socket_, asio::buffer(bufstart, _size), (_handler ? _handler : default_handler_));
                     } else {
                         handle_read(asio::error_code());
