@@ -6,6 +6,8 @@
 #include <string>
 #include <iostream>
 
+#include <boost/log/trivial.hpp>
+
 namespace interproc {
     using symbol_t = uint64_t ;
 
@@ -35,10 +37,11 @@ namespace interproc {
             error
         };
         inline static void _log(const char *_s, log_type _type) {
-            if (_type == log_type::error) {
-                std::cerr << _s << std::endl;
-            } else {
-                std::cout << _s << std::endl;
+            switch (_type) {
+                case log_type::debug:BOOST_LOG_TRIVIAL(debug) << _s;break;
+                case log_type::warn:BOOST_LOG_TRIVIAL(warning) << _s;break;
+                case log_type::info:BOOST_LOG_TRIVIAL(info) << _s;break;
+                case log_type::error:BOOST_LOG_TRIVIAL(error) << _s;break;
             }
         }
 
