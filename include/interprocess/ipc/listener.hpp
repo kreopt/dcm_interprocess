@@ -5,6 +5,7 @@
 #include <thread>
 #include <memory>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include "../core/listener.hpp"
 
 namespace interproc {
@@ -37,18 +38,22 @@ namespace interproc {
                         uint32_t    priority;
                         message_queue::size_type recvd_size;
                         byte_t      data[MQ_SIZE];
-                        mq_->receive(&data, MQ_SIZE, recvd_size, priority);
-                        Log::d("message received");
-                        Log::d(std::string(reinterpret_cast<char*>(data), recvd_size));
+                        auto pt = boost::posix_time::second_clock::local_time()+boost::posix_time::seconds(1);
+                        if (mq_->timed_receive(&data, MQ_SIZE, recvd_size, priority, pt)) {
+                            Log::d("message received");
+                            Log::d(std::string(reinterpret_cast<char *>(data), recvd_size));
+                        }
                     }
                 });
             };
             virtual void stop() {
                 Log::d("stop listener");
+                stopped_ = true;
                 if (mq_) {
                     message_queue::remove(ep_.c_str());
                 }
                 mq_.reset();
+
             };
             virtual void wait_until_stopped() {
                 if (listener_thread_->joinable()) {

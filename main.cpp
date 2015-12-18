@@ -10,8 +10,11 @@ int main(){
     sender->connect();
     std::this_thread::sleep_for(std::chrono::seconds(1));
     sender->send(interproc::to_buffer("test"));
+    sender->send(interproc::to_buffer("test1"));
+    sender->send(interproc::to_buffer("test2"));
     sender->close();
-
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    listener->stop();
     listener->wait_until_stopped();
     return 0;
 }
