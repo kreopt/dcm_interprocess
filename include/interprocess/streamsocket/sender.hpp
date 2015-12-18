@@ -7,8 +7,8 @@
 #include <mutex>
 #include <iostream>
 
-#include "../interproc.hpp"
-#include "../connection.hpp"
+#include "../core/buffer.hpp"
+#include "../core/sender.hpp"
 #include "endpoint.hpp"
 #include "reader.hpp"
 #include "writer.hpp"

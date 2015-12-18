@@ -4,11 +4,12 @@
 #include <asio.hpp>
 #include <error.h>
 
-#include <iostream>
+#include <memory>
 
-#include "../interproc.hpp"
+#include "../core/listener.hpp"
 #include "reader.hpp"
 #include "writer.hpp"
+
 namespace interproc {
     namespace streamsocket {
         template<typename socket_type, typename buffer_type = interproc::buffer >
@@ -36,8 +37,8 @@ namespace interproc {
         public:
 
             // Constructor
-            explicit listener_session(asio::io_service &io_service)
-                    : socket_(std::make_shared<socket_type>(io_service)) {
+            explicit listener_session(std::shared_ptr<asio::io_service> io_service)
+                    : socket_(std::make_shared<socket_type>(*io_service)) {
 
                 started_ = false;
                 reader_ = std::make_shared<reader<socket_type>>(socket_);
@@ -45,7 +46,7 @@ namespace interproc {
 
                 this->writer_->on_fail = this->reader_->on_fail = [this](const asio::error_code &error) {
                     if (error) {
-                        std::cerr << error.message() << std::endl;
+                        Log::d(error.message());
                         eof_ = true;
                         if (on_error) on_error(this->shared_from_this());
                     }
@@ -59,7 +60,7 @@ namespace interproc {
                 if (socket_->is_open()) {
                     socket_->close();
                 }
-                std::cout << "destroy session" << std::endl;
+                Log::d("destroy session");
             }
 
             virtual void send(const buffer_type &_buf) override {
@@ -81,9 +82,9 @@ namespace interproc {
                 return socket_;
             }
 
-            std::function<void(const buffer_type & _buf)> on_message;
-            std::function<void(std::shared_ptr<interproc::session<buffer_type>> _session)> on_error;
-            std::function<void(std::shared_ptr<interproc::session<buffer_type>> _session)> on_connect;
+            std::function<void(const buffer_type & _buf)>           on_message;
+            std::function<void(typename session<buffer_type>::ptr _session)> on_error;
+            std::function<void(typename session<buffer_type>::ptr _session)> on_connect;
         };
     }
 }

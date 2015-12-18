@@ -7,7 +7,7 @@
 #include <asio/read.hpp>
 #include <asio/streambuf.hpp>
 #include <asio/buffers_iterator.hpp>
-#include "../interproc.hpp"
+#include "../core/buffer.hpp"
 
 namespace interproc {
     namespace streamsocket {

@@ -4,7 +4,7 @@
 #include <functional>
 #include <memory>
 #include <asio.hpp>
-#include "../interproc.hpp"
+#include "../core/buffer.hpp"
 
 namespace interproc {
     namespace streamsocket {
