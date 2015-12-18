@@ -82,15 +82,6 @@ namespace interproc {
             template<typename ep_type>
             inline void prepare_endpoint(const std::string &_ep) { }
 
-//            template<>
-//            inline void prepare_accept<asio::ip::tcp::endpoint>(std::shared_ptr<acceptor_type> _acceptor) {
-//                _acceptor->set_option(asio::ip::tcp::acceptor::reuse_address(true));
-//            }
-//            template<>
-//            inline void prepare_endpoint<asio::local::stream_protocol::endpoint>(const std::string &_ep) {
-//                std::filesystem::remove(_ep);
-//            }
-
         public:
 
             // Constructor
@@ -137,7 +128,20 @@ namespace interproc {
                 }
             };
         };
+/*
+ *
+ * FIXME
+        template<typename buffer_type = interproc::buffer, template<typename, typename> class session_type_tpl>
+        inline void listener_impl<asio::ip::tcp, buffer_type, session_type_tpl>::prepare_accept(std::shared_ptr<typename asio::ip::tcp::acceptor> _acceptor) {
+            _acceptor->set_option(asio::ip::tcp::acceptor::reuse_address(true));
+        }
 
+
+        template<typename buffer_type = interproc::buffer, template<typename, typename> class session_type_tpl>
+        inline void listener_impl<asio::local::stream_protocol, buffer_type, session_type_tpl>::prepare_endpoint(const std::string &_ep) {
+            std::filesystem::remove(_ep);
+        }
+*/
         template<typename buffer_type>
         using tcp_listener = listener_impl<asio::ip::tcp, buffer_type, interproc::streamsocket::listener_session>;
 

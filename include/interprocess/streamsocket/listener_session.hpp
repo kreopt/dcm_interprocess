@@ -5,6 +5,7 @@
 #include <error.h>
 
 #include <memory>
+#include <atomic>
 
 #include "../core/listener.hpp"
 #include "reader.hpp"
@@ -16,10 +17,10 @@ namespace interproc {
         class listener_session : public interproc::session<buffer_type>,
                                  public std::enable_shared_from_this<interproc::session<buffer_type>> {
         private:
-            std::shared_ptr<socket_type> socket_;
+            std::shared_ptr<socket_type>         socket_;
         protected:
-            bool eof_;
-            bool started_;
+            std::atomic_bool                     eof_;
+            std::atomic_bool                     started_;
 
             std::shared_ptr<reader<socket_type>> reader_;
             std::shared_ptr<writer<socket_type>> writer_;
@@ -48,6 +49,7 @@ namespace interproc {
                     if (error) {
                         Log::d(error.message());
                         eof_ = true;
+                        // TODO: pass error to on_error function
                         if (on_error) on_error(this->shared_from_this());
                     }
                 };
@@ -78,11 +80,11 @@ namespace interproc {
             }
 
             // Overloads
-            std::shared_ptr<socket_type> socket() {
+            inline std::shared_ptr<socket_type> socket() const {
                 return socket_;
             }
 
-            std::function<void(const buffer_type & _buf)>           on_message;
+            std::function<void(const buffer_type & _buf)>                    on_message;
             std::function<void(typename session<buffer_type>::ptr _session)> on_error;
             std::function<void(typename session<buffer_type>::ptr _session)> on_connect;
         };

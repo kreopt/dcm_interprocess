@@ -3,6 +3,7 @@
 
 #include <asio.hpp>
 #include <thread>
+#include <atomic>
 #include <error.h>
 #include <mutex>
 #include <iostream>
@@ -27,14 +28,14 @@ namespace interproc {
             using socket_type = typename protocol_type::socket;
             using endpoint_type = typename protocol_type::endpoint;
 
-            std::shared_ptr<asio::io_service> io_service_;
-            std::shared_ptr<socket_type> socket_;
-            typename protocol_type::endpoint endpoint_;
-            std::thread client_thread_;
+            std::shared_ptr<asio::io_service>   io_service_;
+            std::shared_ptr<socket_type>        socket_;
+            typename protocol_type::endpoint    endpoint_;
+            std::thread                         client_thread_;
             std::shared_ptr<reader<socket_type, buffer_type>> reader_;
             std::shared_ptr<writer<socket_type, buffer_type>> writer_;
-            volatile bool stopped_;
-            volatile bool connected_;
+            std::atomic_bool                    stopped_;
+            std::atomic_bool                    connected_;
 
             // Event handlers
             void handle_connect(const asio::error_code &error) {
