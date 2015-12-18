@@ -5,6 +5,7 @@
 #include <thread>
 #include <memory>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "../core/listener.hpp"
 
@@ -41,7 +42,20 @@ namespace interproc {
                         auto pt = boost::posix_time::microsec_clock::universal_time() + boost::posix_time::milliseconds(1000);
                         if (mq_->timed_receive(&data, MQ_SIZE, recvd_size, priority, pt)) {
                             Log::d("message received");
-                            Log::d(std::string(reinterpret_cast<char *>(data), recvd_size));
+                            std::string uuid = std::string(reinterpret_cast<char *>(data), recvd_size);
+
+                            Log::d(uuid);
+
+                            shared_memory_object shm (open_only, uuid.c_str(), read_write);
+                            mapped_region region(shm, read_write);
+
+                            char *mem = static_cast<char*>(region.get_address());
+                            buffer_type buf(reinterpret_cast<byte_t*>(mem+BLOCK_DESCRIPTOR_SIZE), region.get_size()-BLOCK_DESCRIPTOR_SIZE);
+                            block_descriptor_t recv_cnt = reinterpret_cast<block_descriptor_t*>(mem)[0];
+                            shared_memory_object::remove(uuid.c_str());
+
+                            Log::d(std::string("receiver count:")+std::to_string(recv_cnt));
+                            Log::d(std::string(reinterpret_cast<const char*>(buf.data()), buf.size()));
                         }
                     }
                 });
