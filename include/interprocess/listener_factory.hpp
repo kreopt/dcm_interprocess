@@ -8,20 +8,15 @@
 namespace interproc {
     template <typename buffer_type = interproc::buffer>
     inline std::shared_ptr<listener<buffer_type>> make_listener(const std::string &_ep) {
-        auto pos = _ep.find("://");
-        if (pos==std::string::npos) {
-            throw std::runtime_error("invalid protocol. supported types are ipc, tcp and unix");
-        }
-        auto proto = _ep.substr(0, pos);
-        auto ep = _ep.substr(pos+3);
+        auto info = parse_endpoint(_ep);
 
-        switch (protocol(symbol(proto))) {
+        switch (protocol(symbol(info.first))) {
             case protocol::unix:
-                return std::make_shared<streamsocket::unix_listener<buffer_type>>(ep);
+                return std::make_shared<streamsocket::unix_listener<buffer_type>>(info.second);
             case protocol::tcp:
-                return std::make_shared<streamsocket::tcp_listener<buffer_type>>(ep);
+                return std::make_shared<streamsocket::tcp_listener<buffer_type>>(info.second);
             case protocol::ipc:
-                return std::make_shared<ipc::ipc_listener<buffer_type>>(ep);
+                return std::make_shared<ipc::ipc_listener<buffer_type>>(info.second);
             default:
                 throw std::runtime_error("invalid protocol. supported types are ipc, tcp and unix");
         }

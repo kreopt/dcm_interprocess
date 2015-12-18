@@ -17,6 +17,7 @@ target_link_libraries(${PROJECT_NAME}
         pthread
         boost_system
         boost_filesystem
+        rt
         )
 
 install(DIRECTORY include/ DESTINATION include/dcm/ FILES_MATCHING PATTERN "*.hpp")

@@ -3,14 +3,14 @@
 
 int main(){
 
-    auto listener = interproc::make_listener<interproc::buffer>("unix://test.sock");
-//    auto sender = interproc::make_sender<interproc::buffer>(interproc::conn_type::unix, "test.sock");
+    auto listener = interproc::make_listener<>("ipc://test.sock");
+    auto sender = interproc::make_sender<>("ipc://test.sock");
 
     listener->start();
-//    sender->connect();
-//    std::this_thread::sleep_for(std::chrono::seconds(1));
-//    sender->send("test");
-//    sender->close();
+    sender->connect();
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    sender->send(interproc::to_buffer("test"));
+    sender->close();
 
     listener->wait_until_stopped();
     return 0;

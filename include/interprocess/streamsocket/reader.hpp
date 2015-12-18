@@ -15,15 +15,16 @@ namespace interproc {
         template<typename socket_type, typename buffer_type = interproc::buffer>
         class reader {
             using handler_t = std::function<void(const asio::error_code &_error, const long unsigned int&)>;
+            using socket_ptr = std::shared_ptr<socket_type>;
         protected:
-            buffer buffer_;
-            asio::streambuf response_;
-            bool streambuf_read_;
-            std::shared_ptr<socket_type> socket_;
-            handler_t default_handler_;
+            buffer              buffer_;
+            asio::streambuf     response_;
+            std::atomic_bool    streambuf_read_;
+            socket_ptr          socket_;
+            handler_t           default_handler_;
         public:
 
-            explicit reader(std::shared_ptr<socket_type> _socket) : socket_(_socket) {
+            explicit reader(socket_ptr _socket) : socket_(_socket) {
                 default_handler_ = std::bind(&interproc::streamsocket::reader<socket_type>::handle_read, this, std::placeholders::_1);
             };
 

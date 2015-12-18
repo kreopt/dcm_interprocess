@@ -30,7 +30,7 @@ namespace interproc {
         virtual void stop() = 0;
         virtual void wait_until_stopped() = 0;
 
-        std::function<void(const buffer_type&)>        on_message;
+        std::function<void(const buffer_type&)>                 on_message;
         std::function<void(typename session<buffer_type>::ptr)> on_connect;
     };
 
