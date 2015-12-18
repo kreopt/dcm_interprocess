@@ -38,7 +38,7 @@ namespace interproc {
                         uint32_t    priority;
                         message_queue::size_type recvd_size;
                         byte_t      data[MQ_SIZE];
-                        auto pt = boost::posix_time::second_clock::local_time()+boost::posix_time::seconds(1);
+                        auto pt = boost::posix_time::microsec_clock::universal_time() + boost::posix_time::milliseconds(1000);
                         if (mq_->timed_receive(&data, MQ_SIZE, recvd_size, priority, pt)) {
                             Log::d("message received");
                             Log::d(std::string(reinterpret_cast<char *>(data), recvd_size));
@@ -49,16 +49,15 @@ namespace interproc {
             virtual void stop() {
                 Log::d("stop listener");
                 stopped_ = true;
-                if (mq_) {
-                    message_queue::remove(ep_.c_str());
-                }
-                mq_.reset();
-
             };
             virtual void wait_until_stopped() {
                 if (listener_thread_->joinable()) {
                     listener_thread_->join();
                 }
+                if (mq_) {
+                    message_queue::remove(ep_.c_str());
+                }
+                mq_.reset();
             };
         };
 
