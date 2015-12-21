@@ -50,7 +50,7 @@ namespace interproc {
                             mapped_region region(shm, read_write);
 
                             char *mem = static_cast<char*>(region.get_address());
-                            buffer_type buf(reinterpret_cast<byte_t*>(mem+BLOCK_DESCRIPTOR_SIZE), region.get_size()-BLOCK_DESCRIPTOR_SIZE);
+                            buffer_type buf(reinterpret_cast<char*>(mem+BLOCK_DESCRIPTOR_SIZE), region.get_size()-BLOCK_DESCRIPTOR_SIZE);
                             block_descriptor_t recv_cnt = reinterpret_cast<block_descriptor_t*>(mem)[0];
                             shared_memory_object::remove(uuid.c_str());
 

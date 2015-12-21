@@ -1,6 +1,6 @@
 #include "interprocess/listener_factory.hpp"
 #include "interprocess/sender_factory.hpp"
-
+#include <chrono>
 int main(){
 
 
@@ -9,12 +9,10 @@ int main(){
 
     listener->start();
     sender->connect();
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-    sender->send(interproc::to_buffer("test"));
-    sender->send(interproc::to_buffer("test1"));
-    sender->send(interproc::to_buffer("test2"));
+    for (int i=0; i< 10000; i++) {
+        sender->send(interproc::buffer("test"));
+    }
     sender->close();
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     listener->stop();
     listener->wait_until_stopped();
     return 0;

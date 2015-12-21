@@ -35,10 +35,14 @@ namespace interproc {
 
             virtual void send(const buffer_type &_buf) {
                 Log::d("sending");
-                boost::uuids::random_generator gen;
-                boost::uuids::uuid uuid = gen();
+//                boost::uuids::random_generator gen;
+//                boost::uuids::uuid uuid = gen();
+//
+//                std::string uid = boost::uuids::to_string(uuid);
+                std::string uid(std::to_string(getmypid()).append(":").append(std::to_string(msg_cnt_)));
+                sprintf(uid, "%d:%d", getmypid(), msg_cnt_);
+                msg_cnt_++;
 
-                std::string uid = boost::uuids::to_string(uuid);
 
                 shared_memory_object shm_obj(create_only, uid.c_str(), read_write);
                 shm_obj.truncate(_buf.size()+BLOCK_DESCRIPTOR_SIZE);
@@ -48,7 +52,7 @@ namespace interproc {
                 std::memset(region.get_address(), BLOCK_DESCRIPTOR_SIZE, 0);
                 std::memcpy(static_cast<byte_t*>(region.get_address())+BLOCK_DESCRIPTOR_SIZE, _buf.data(), _buf.size());
 
-                buffer_type buf = to_buffer(uid);
+                buffer_type buf(uid, true);
                 mq_->send(buf.data(), buf.size(), 0);
             };
 

@@ -17,7 +17,7 @@ namespace interproc {
             using handler_t = std::function<void(const asio::error_code &_error, const long unsigned int&)>;
             using socket_ptr = std::shared_ptr<socket_type>;
         protected:
-            buffer              buffer_;
+            buffer_type         buffer_;
             asio::streambuf     response_;
             std::atomic_bool    streambuf_read_;
             socket_ptr          socket_;
@@ -34,8 +34,8 @@ namespace interproc {
                     streambuf_read_ = false;
                     buffer_.resize(_size);
                     if (_size) {
-                        byte_t *bufstart = &buffer_[0];
-                        asio::async_read(*socket_, asio::buffer(bufstart, _size), (_handler ? _handler : default_handler_));
+                        const char *bufstart = buffer_.data();
+                        asio::async_read(*socket_, asio::buffer(const_cast<char*>(bufstart), _size), (_handler ? _handler : default_handler_));
                     } else {
                         handle_read(asio::error_code());
                     }
@@ -54,7 +54,7 @@ namespace interproc {
                         if (streambuf_read_) {
                             buffer_.clear();
                             asio::streambuf::const_buffers_type bufs = response_.data();
-                            data = buffer_type(asio::buffers_begin(bufs), asio::buffers_begin(bufs) + response_.size());
+                            data = buffer_type(asio::buffer_cast<const char*>(bufs), response_.size());
                             response_.consume(response_.size());
                         } else {
                             data = buffer_type(buffer_.data(), buffer_.size());

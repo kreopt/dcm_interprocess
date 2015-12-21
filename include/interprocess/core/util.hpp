@@ -8,6 +8,11 @@
 
 #include <boost/log/trivial.hpp>
 
+#if defined(__linux__) || defined(__APPLE__)
+    #include <sys/types.h>
+    #include <unistd.h>
+#endif
+
 namespace interproc {
     using symbol_t = uint64_t ;
 
@@ -27,6 +32,10 @@ namespace interproc {
 
     symbol_t constexpr operator "" _sym(const char* s, size_t) {
         return symbol(s);
+    }
+
+    uint32_t getmypid() {
+        return getpid();
     }
 
     class Log {

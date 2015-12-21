@@ -6,22 +6,99 @@
 #include "defs.hpp"
 
 namespace interproc {
-    using buffer = std::basic_string<byte_t>;
+//    using buffer = std::basic_string<byte_t>;
+    class buffer {
+        char *data_;
+        size_t size_;
+        bool wrapped_;
+    public:
 
-    template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
-    inline buffer to_buffer(T v){
-        return buffer(reinterpret_cast<byte_t*>(v), sizeof(T));
-    }
+        inline size_t size() const { return size_; }
 
-    template <>
-    inline buffer to_buffer(bool v){
-        byte_t b = v?'\0':'\1';
-        return buffer(&b, 1);
-    }
+        inline const char *data() const { return data_; }
+        inline char *data() { return data_; }
 
-    inline buffer to_buffer(const std::string &_s){
-        return buffer(reinterpret_cast<const byte_t*>(_s.data()), _s.size());
-    }
+        virtual ~buffer() {
+            if (!wrapped_) {
+                delete[] data_;
+            }
+        }
+
+        buffer() {
+            size_ = 0;
+            data_ = nullptr;
+        }
+
+        buffer(const char *_data) {
+            size_ = sizeof(_data);
+            data_ = new char[size_];
+            memcpy(data_, _data, size_);
+        }
+
+        buffer(const char *_data, size_t _size, bool _wrap = false) {
+            size_ = _size;
+            if (_wrap) {
+                data_ = const_cast<char*>(_data);
+                wrapped_=true;
+            } else {
+                data_ = new char[_size];
+                memcpy(data_, _data, size_);
+            }
+        }
+
+        buffer(bool _val) {
+            size_ = 1;
+            data_ = new char[1]{static_cast<char>(_val ? 1 : 0)};
+//            data_[0] = _val ? 1 : 0;
+        }
+
+        template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+        buffer(T _val) {
+            size_ = sizeof(T);
+            data_ = new char[size_];
+            memcpy(const_cast<char *>(data_), reinterpret_cast<char *>(_val), size_);
+        };
+
+        buffer(const std::string &_data, bool _wrap = false) {
+            size_ = _data.size();
+            if (_wrap) {
+                wrapped_ = true;
+                data_ = const_cast<char*>(&_data.front());
+            } else {
+                data_ = new char[size_];
+                memcpy(const_cast<char *>(data_), _data.data(), size_);
+            }
+        }
+
+        inline void clear() {
+            size_=0;
+            if (!wrapped_) {
+                delete[] data_;
+            }
+            data_= nullptr;
+        }
+
+        inline void resize(size_t _size) {
+            if (data_) clear();
+            size_=_size;
+            data_ = new char[size_];
+        }
+    };
+//
+//    template <typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
+//    inline buffer to_buffer(T v){
+//        return buffer(reinterpret_cast<byte_t*>(v), sizeof(T));
+//    }
+//
+//    template <>
+//    inline buffer to_buffer(bool v){
+//        byte_t b = v?'\0':'\1';
+//        return buffer(&b, 1);
+//    }
+//
+//    inline buffer to_buffer(const std::string &_s){
+//        return buffer(reinterpret_cast<const byte_t*>(_s.data()), _s.size());
+//    }
 
     inline void write_size(obufstream& _s, block_descriptor_t _sz){
         _s.write(reinterpret_cast<interproc::byte_t*>(&_sz), interproc::BLOCK_DESCRIPTOR_SIZE);
