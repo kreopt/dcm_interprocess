@@ -18,6 +18,8 @@ namespace interproc {
                                  public std::enable_shared_from_this<interproc::session<buffer_type>> {
         private:
             std::shared_ptr<socket_type>         socket_;
+            interproc::queue_based_buf_handler<buffer_type> handler_queue_;
+
         protected:
             std::atomic_bool                     eof_;
             std::atomic_bool                     started_;
@@ -30,7 +32,7 @@ namespace interproc {
                 this->reader_->read();
             }
             virtual void read_success_handler(buffer_type &&_buffer) {
-                if (this->on_message) this->on_message(_buffer);
+                handler_queue_.enqueue(std::forward<buffer_type>(_buffer));
                 if (!eof_) {
                     this->reader_->read();
                 }
@@ -39,7 +41,7 @@ namespace interproc {
 
             // Constructor
             explicit listener_session(std::shared_ptr<asio::io_service> io_service)
-                    : socket_(std::make_shared<socket_type>(*io_service)) {
+                    : handler_queue_(1024*1024*1024), socket_(std::make_shared<socket_type>(*io_service)) {
 
                 started_ = false;
                 reader_ = std::make_shared<reader<socket_type>>(socket_);
@@ -62,6 +64,8 @@ namespace interproc {
                 if (socket_->is_open()) {
                     socket_->close();
                 }
+                handler_queue_.stop();
+                handler_queue_.wait_until_stopped();
                 Log::d("destroy session");
             }
 
@@ -76,6 +80,8 @@ namespace interproc {
             virtual void start() {
                 read();
                 started_ = true;
+                handler_queue_.on_message = this->on_message;
+                handler_queue_.start();
                 if (on_connect) on_connect(this->shared_from_this());
             }
 
@@ -84,9 +90,9 @@ namespace interproc {
                 return socket_;
             }
 
-            std::function<void(const buffer_type & _buf)>                    on_message;
+            interproc::msg_handler_t<buffer_type>                    on_message;
             std::function<void(typename session<buffer_type>::ptr _session)> on_error;
-            std::function<void(typename session<buffer_type>::ptr _session)> on_connect;
+            interproc::connect_handler_t<buffer_type> on_connect;
         };
     }
 }

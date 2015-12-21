@@ -40,7 +40,6 @@ namespace interproc {
 //
 //                std::string uid = boost::uuids::to_string(uuid);
                 std::string uid(std::to_string(getmypid()).append(":").append(std::to_string(msg_cnt_)));
-                sprintf(uid, "%d:%d", getmypid(), msg_cnt_);
                 msg_cnt_++;
 
 

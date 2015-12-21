@@ -2,6 +2,7 @@
 #define INTERPROCESS_BUFFER_HPP
 
 #include <string>
+#include <cstring>
 #include <type_traits>
 #include "defs.hpp"
 
@@ -10,7 +11,7 @@ namespace interproc {
     class buffer {
         char *data_;
         size_t size_;
-        bool wrapped_;
+        bool wrapped_ = false;
     public:
 
         inline size_t size() const { return size_; }
@@ -22,6 +23,19 @@ namespace interproc {
             if (!wrapped_) {
                 delete[] data_;
             }
+        }
+
+        buffer(const buffer& _buf) {
+            size_ = _buf.size_;
+            data_ = new char[size_];
+            memcpy(data_, _buf.data_, size_);
+        }
+
+        buffer(buffer&& _buf) {
+            size_ = _buf.size_;
+            data_ = _buf.data_;
+            _buf.data_ = nullptr;
+            _buf.size_ = 0;
         }
 
         buffer() {
@@ -68,6 +82,28 @@ namespace interproc {
                 data_ = new char[size_];
                 memcpy(const_cast<char *>(data_), _data.data(), size_);
             }
+        }
+
+
+        buffer& operator=(const buffer& _buf) {
+            size_ = _buf.size_;
+            if (data_) {
+                delete [] data_;
+            }
+            data_ = new char[size_];
+            memcpy(data_, _buf.data_, size_);
+            return *this;
+        }
+
+        buffer& operator=(buffer&& _buf) {
+            size_ = _buf.size_;
+            if (data_) {
+                delete [] data_;
+            }
+            data_ = _buf.data_;
+            _buf.data_ = nullptr;
+            _buf.size_ = 0;
+            return *this;
         }
 
         inline void clear() {
