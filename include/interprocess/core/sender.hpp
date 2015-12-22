@@ -17,6 +17,8 @@ namespace interproc {
 
         //TODO: on_error function
     };
+
+    using default_sender = sender<>;
 }
 
 #endif //INTERPROCESS_SENDER_HPP

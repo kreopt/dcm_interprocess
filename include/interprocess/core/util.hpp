@@ -8,12 +8,6 @@
 
 #include <boost/log/trivial.hpp>
 
-#if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
-#include <sys/types.h>
-    #include <unistd.h>
-#elif defined(_WIN32)
-#include <process.h>
-#endif
 
 namespace interproc {
     using symbol_t = uint64_t ;
@@ -24,27 +18,17 @@ namespace interproc {
         }
     }
 
-    constexpr uint64_t symbol(const char* str) {
-        return ( !str ? 0 : symbol_recursive(5381, str));
+    constexpr uint64_t symbol(const char *str) {
+        return (!str ? 0 : symbol_recursive(5381, str));
     }
 
-    uint64_t symbol(const std::string &str) {
-        return ( !str.c_str() ? 0 : symbol_recursive(5381, str.c_str()));
-    }
-
-    symbol_t constexpr operator "" _sym(const char* s, size_t) {
+    symbol_t constexpr operator ""_sym(const char *s, size_t) {
         return symbol(s);
     }
 
-    uint32_t getmypid() {
-        #if defined(__linux__) || defined(__APPLE__)
-        return getpid();
-        #elif defined(_WIN32)
-        return _getpid();
-        #else
-        return 0; // This should not happen
-        #endif
-    }
+    extern uint64_t symbol(const std::string &str);
+
+    extern uint32_t getmypid();
 
     class Log {
         enum class log_type {

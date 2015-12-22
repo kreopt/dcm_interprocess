@@ -108,5 +108,7 @@ namespace interproc {
             }
         }
     };
+
+    using default_listener = listener<>;
 }
 #endif //INTERPROCESS_LISTENER_HPP

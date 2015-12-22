@@ -4,12 +4,10 @@
 #include "../core/sender.hpp"
 #include "../core/defs.hpp"
 #include "../core/buffer.hpp"
+#include "../core/util.hpp"
 #include <atomic>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
-#include <boost/uuid/uuid.hpp>
-#include <boost/uuid/uuid_io.hpp>
-#include <boost/uuid/uuid_generators.hpp>
 
 
 namespace interproc {

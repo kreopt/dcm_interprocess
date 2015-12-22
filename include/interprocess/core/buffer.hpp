@@ -84,7 +84,6 @@ namespace interproc {
             }
         }
 
-
         buffer& operator=(const buffer& _buf) {
             size_ = _buf.size_;
             if (data_) {
@@ -104,6 +103,12 @@ namespace interproc {
             _buf.data_ = nullptr;
             _buf.size_ = 0;
             return *this;
+        }
+
+        inline void release_ownership() {
+            size_=0;
+            data_= nullptr;
+            wrapped_ = false;
         }
 
         inline void clear() {
