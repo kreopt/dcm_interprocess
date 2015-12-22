@@ -8,9 +8,11 @@
 
 #include <boost/log/trivial.hpp>
 
-#if defined(__linux__) || defined(__APPLE__)
-    #include <sys/types.h>
+#if defined(__linux__) || defined(__APPLE__) || defined(__unix__)
+#include <sys/types.h>
     #include <unistd.h>
+#elif defined(_WIN32)
+#include <process.h>
 #endif
 
 namespace interproc {
@@ -35,7 +37,13 @@ namespace interproc {
     }
 
     uint32_t getmypid() {
+        #if defined(__linux__) || defined(__APPLE__)
         return getpid();
+        #elif defined(_WIN32)
+        return _getpid();
+        #else
+        return 0; // This should not happen
+        #endif
     }
 
     class Log {

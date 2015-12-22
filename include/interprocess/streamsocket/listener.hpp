@@ -5,17 +5,14 @@
 #include <set>
 #include <asio.hpp>
 #include <thread>
-
-#ifndef STD_FILESYSTEM
-
-#include <boost/filesystem.hpp>
 #include <mutex>
 
-namespace std {
-    namespace filesystem = boost::filesystem;
-}
+#if USE_STD_FS && defined(__has_include) && __has_include("experimental/filesystem")
+#include <experimental/filesystem>
+namespace filesystem = std::experimental::filesystem;
 #else
-#include <filesystem>
+#include <boost/filesystem.hpp>
+namespace filesystem = boost::filesystem;
 #endif
 
 #include "../core/listener.hpp"
@@ -86,7 +83,7 @@ namespace interproc {
 
             inline void prepare_endpoint(const std::string &_ep) {
                 if (std::is_same<protocol_type, asio::local::stream_protocol>()) {
-                    std::filesystem::remove(_ep);
+                    filesystem::remove(_ep);
                 }
             }
 
