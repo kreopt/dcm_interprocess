@@ -11,7 +11,9 @@ FIND_PACKAGE(Boost 1.58 COMPONENTS log REQUIRED)
 FIND_PACKAGE(Boost 1.58 COMPONENTS system REQUIRED)
 FIND_PACKAGE(Boost 1.58 COMPONENTS filesystem OPTIONAL)
 
-find_path(DCMIPC_INCLUDE_DIR interprocess/listener_fctory.hpp PATH_SUFFIXES dcm )
+set(DCMIPC_INSTALL_PREFIX "/usr/local")
+
+find_path(DCMIPC_INCLUDE_DIR ${DCMIPC_INSTALL_PREFIX}/dcm/interprocess/listener_fctory.hpp PATH_SUFFIXES dcm )
 
 # FIXME: failed to find stdc++fs
 FIND_LIBRARY(STDCPP_FS stdc++fs)
@@ -27,6 +29,6 @@ endif()
 set(OS_SPECIFIC pthread rt)
 
 set(DCMIPC_INCLUDE_DIRS, ${DCMIPC_INCLUDE_DIR})
-set(DCMIPC_LIBRARIES  ${OS_SPECIFIC} ${Boost_SYSTEM_LIBRARY} ${Boost_LOG_LIBRARY} ${FS_LIB} dcm_ipc)
+set(DCMIPC_LIBRARIES  ${OS_SPECIFIC} ${Boost_SYSTEM_LIBRARY} ${Boost_LOG_LIBRARY} ${FS_LIB} ${DCMIPC_INSTALL_PREFIX}/lib/dcm/libdcm_ipc.so)
 
 mark_as_advanced(DCMIPC_INCLUDE_DIR STDCPP_FS FS_LIB OS_SPECIFIC)
