@@ -50,7 +50,7 @@ namespace interproc {
                 std::memcpy(static_cast<byte_t*>(region.get_address())+BLOCK_DESCRIPTOR_SIZE, _buf.data(), _buf.size());
 
                 buffer_type buf(uid, true);
-                mq_->send(buf.data(), buf.size(), 0);
+                mq_->try_send(buf.data(), buf.size(), 0);
             };
 
             virtual void close(){
