@@ -34,6 +34,7 @@ namespace interproc {
             virtual ~listener_impl() {
                 stop();
                 wait_until_stopped();
+                message_queue::remove(ep_.c_str());
             }
             explicit listener_impl(const std::string &_ep) : handler_queue_(QUEUE_SIZE), ep_(_ep){
                 // TODO: throw or return invalid state?

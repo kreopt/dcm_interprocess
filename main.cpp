@@ -2,7 +2,7 @@
 #include "interprocess/sender_factory.hpp"
 #include <chrono>
 int main(){
-
+    using namespace std::chrono_literals;
 
     auto listener = interproc::make_listener<>("ipc://test.sock");
     auto sender = interproc::make_sender<>("ipc://test.sock");
@@ -21,5 +21,9 @@ int main(){
     sender->close();
     listener->stop();
     listener->wait_until_stopped();
+    std::this_thread::sleep_for(1s);
+    for (int i=0; i< 10/*000*/; i++) {
+        sender->send(buf);
+    }
     return 0;
 }

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.2)
 project(interprocess)
 
 include_directories(include/)
-add_definitions(-std=c++1z)
+add_definitions(-std=c++1z -DUSE_BOOST_LOG)
 
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include/**/*.hpp)

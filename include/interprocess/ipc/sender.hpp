@@ -26,20 +26,21 @@ namespace interproc {
                 close();
             }
 
+            // TODO: multicast
+
             virtual void connect() {
                 Log::d("connecting");
                 mq_ = std::make_unique<message_queue>(open_only, ep_.c_str());
             };
 
             virtual void send(const buffer_type &_buf) {
-                Log::d("sending");
-//                boost::uuids::random_generator gen;
-//                boost::uuids::uuid uuid = gen();
-//
-//                std::string uid = boost::uuids::to_string(uuid);
+                if (!mq_) {
+                    Log::d("message queue destroyed. reconnect");
+                    throw std::runtime_error("message queue destroyed");
+                }
+
                 std::string uid(std::to_string(getmypid()).append(":").append(std::to_string(msg_cnt_)));
                 msg_cnt_++;
-
 
                 shared_memory_object shm_obj(create_only, uid.c_str(), read_write);
                 shm_obj.truncate(_buf.size()+BLOCK_DESCRIPTOR_SIZE);
@@ -50,7 +51,12 @@ namespace interproc {
                 std::memcpy(static_cast<byte_t*>(region.get_address())+BLOCK_DESCRIPTOR_SIZE, _buf.data(), _buf.size());
 
                 buffer_type buf(uid, true);
-                mq_->try_send(buf.data(), buf.size(), 0);
+
+                if (!mq_->try_send(buf.data(), buf.size(), 0)){
+                    Log::d("failed to send");
+
+                    throw std::runtime_error("failed to send message");
+                };
             };
 
             virtual void close(){
