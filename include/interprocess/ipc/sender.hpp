@@ -18,19 +18,25 @@ namespace interproc {
         class sender_impl: public interproc::sender<buffer_type> {
             std::unique_ptr<message_queue>  mq_;
             std::string                     ep_;
-            std::atomic_int                 msg_cnt_;
+            std::atomic_ullong              msg_cnt_;
         public:
-            virtual ~sender_impl() {}
+            virtual ~sender_impl() {
+                close();
+            }
 
             explicit sender_impl(const std::string &_endpoint) : ep_(_endpoint) {
-                close();
+//                close();
             }
 
             // TODO: multicast
 
             virtual void connect() {
                 Log::d("connecting");
-                mq_ = std::make_unique<message_queue>(open_only, ep_.c_str());
+                try {
+                    mq_ = std::make_unique<message_queue>(open_only, ep_.c_str());
+                } catch (...) {
+                    throw std::runtime_error("failed to connect to message queue");
+                }
             };
 
             virtual void send(const buffer_type &_buf) {
@@ -54,16 +60,18 @@ namespace interproc {
 
                 if (!mq_->try_send(buf.data(), buf.size(), 0)){
                     Log::d("failed to send");
-
+                    shared_memory_object::remove(uid.c_str());
                     throw std::runtime_error("failed to send message");
                 };
             };
 
             virtual void close(){
                 if (mq_) {
-                    message_queue::remove(ep_.c_str());
+                    try {
+                        message_queue::remove(ep_.c_str());
+                    } catch(...) {}
+                    mq_.reset();
                 }
-                mq_.reset();
             };
         };
 
