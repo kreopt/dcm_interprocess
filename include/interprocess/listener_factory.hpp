@@ -1,7 +1,7 @@
 #ifndef INTERPROCESS_LISTENER_FACTORY_HPP
 #define INTERPROCESS_LISTENER_FACTORY_HPP
 
-#include "core/util.hpp"
+#include "util.hpp"
 #include "streamsocket/listener.hpp"
 #include "ipc/listener.hpp"
 

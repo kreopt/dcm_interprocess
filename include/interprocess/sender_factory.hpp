@@ -1,7 +1,7 @@
 #ifndef INTERPROCESS_SENDER_FACTORY_HPP
 #define INTERPROCESS_SENDER_FACTORY_HPP
 
-#include "core/util.hpp"
+#include "util.hpp"
 #include "streamsocket/sender.hpp"
 #include "ipc/sender.hpp"
 
