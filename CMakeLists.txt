@@ -3,6 +3,7 @@ project(interprocess)
 
 include_directories(include/)
 add_definitions(-std=c++1z -DUSE_BOOST_LOG)
+include(cmake/ExtLibs.cmake)
 
 file(GLOB_RECURSE HEADERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/include/**/*.hpp)
@@ -12,9 +13,7 @@ add_executable(${PROJECT_NAME} ${HEADERS}
 
 add_library(dcm_ipc SHARED src/util.cpp)
 
-include(cmake/DcmIpcConfig.cmake)
-
-target_link_libraries(${PROJECT_NAME} ${DCMIPC_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${DCMIPC_EXT_LIBRARIES})
 
 set(CMAKECONFIG_INSTALL_DIR "lib/cmake/DcmIpc")
 

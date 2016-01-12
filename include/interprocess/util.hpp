@@ -11,6 +11,7 @@
 #endif
 
 namespace interproc {
+    // TODO: store string info in type
     using symbol_t = uint64_t ;
 
     namespace {

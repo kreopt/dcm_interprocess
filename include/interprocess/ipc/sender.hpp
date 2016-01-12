@@ -4,7 +4,7 @@
 #include "../core/sender.hpp"
 #include "../core/defs.hpp"
 #include "../core/buffer.hpp"
-#include "../core/util.hpp"
+#include "../util.hpp"
 #include <atomic>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
