@@ -5,7 +5,7 @@ int main(){
     using namespace std::chrono_literals;
 
     auto listener = interproc::make_listener<>("ipc://test.sock");
-    auto sender = interproc::make_sender<>("ipc://test.sock");
+    auto sender = interproc::make_sender<>("ipc://test1.sock");
 
     auto buf = interproc::buffer(new char[1920*1080*3], 1920*1080*3);
 

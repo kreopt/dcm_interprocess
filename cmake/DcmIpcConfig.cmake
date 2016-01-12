@@ -8,10 +8,11 @@
 add_definitions(-DASIO_STANDALONE)
 
 set(DCMIPC_INSTALL_PREFIX "/usr/local")
+set(CMAKECONFIG_INSTALL_DIR "lib/cmake/DcmIpc")
 
 find_path(DCMIPC_INCLUDE_DIR ${DCMIPC_INSTALL_PREFIX}/dcm/interprocess/listener_fctory.hpp PATH_SUFFIXES dcm )
 
-include(ExtLibs.cmake)
+include(${DCMIPC_INSTALL_PREFIX}/${CMAKECONFIG_INSTALL_DIR}/ExtLibs.cmake)
 
 set(DCMIPC_INCLUDE_DIRS, ${DCMIPC_INCLUDE_DIR})
 set(DCMIPC_LIBRARIES  ${DCMIPC_EXT_LIBRARIES} ${DCMIPC_INSTALL_PREFIX}/lib/dcm/libdcm_ipc.so)
