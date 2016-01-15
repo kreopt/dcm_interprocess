@@ -6,9 +6,11 @@
 #include <deque>
 #include <condition_variable>
 #include <atomic>
+#include <binelpro/log.hpp>
 #include "buffer.hpp"
 
 namespace interproc {
+    using bp::Log;
 
     template <typename buffer_type = interproc::buffer >
     using msg_handler_t = std::function<void(buffer_type&&)>;

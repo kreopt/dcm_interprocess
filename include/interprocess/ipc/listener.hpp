@@ -34,6 +34,9 @@ namespace interproc {
             virtual ~listener_impl() {
                 stop();
                 wait_until_stopped();
+                // TODO: cleanup unhandled memory from queue
+                // 1. lock queue
+                // 2. remove shmem chunks
                 message_queue::remove(ep_.c_str());
             }
             explicit listener_impl(const std::string &_ep) : handler_queue_(QUEUE_SIZE), ep_(_ep){

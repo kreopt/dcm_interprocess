@@ -105,6 +105,10 @@ namespace interproc {
             return *this;
         }
 
+        inline operator std::string() {
+            return std::string(data_, size_);
+        }
+
         inline void release_ownership() {
             size_=0;
             data_= nullptr;

@@ -1,7 +1,7 @@
 #ifndef INTERPROCESS_LISTENER_FACTORY_HPP
 #define INTERPROCESS_LISTENER_FACTORY_HPP
 
-#include "util.hpp"
+#include <binelpro/symbol.hpp>
 #include "streamsocket/listener.hpp"
 #include "ipc/listener.hpp"
 
@@ -10,7 +10,7 @@ namespace interproc {
     inline std::shared_ptr<listener<buffer_type>> make_listener(const std::string &_ep) {
         auto info = parse_endpoint(_ep);
 
-        switch (protocol(symbol(info.first))) {
+        switch (protocol(bp::symbol(info.first).hash)) {
             case protocol::unix:
                 return std::make_shared<streamsocket::unix_listener<buffer_type>>(info.second);
             case protocol::tcp:

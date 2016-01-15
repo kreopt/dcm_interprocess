@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <sstream>
-#include "../util.hpp"
+#include <binelpro/symbol.hpp>
 
 namespace interproc {
     using block_descriptor_t = uint32_t;
@@ -15,10 +15,12 @@ namespace interproc {
     const size_t   MQ_SIZE = 100;
     const size_t   MQ_AMOUNT = 100;
 
-    enum class protocol : symbol_t {
-        ipc = symbol("ipc"),
-        tcp = symbol("tcp"),
-        unix = symbol("unix")
+    using namespace bp::literals;
+
+    enum class protocol : bp::symbol_t::hash_type {
+        ipc = "ipc"_sym,
+        tcp = "tcp"_sym,
+        unix = "unix"_sym
     };
 
     inline std::pair<std::string, std::string> parse_endpoint(const std::string &_ep) {

@@ -4,7 +4,8 @@
 #include "../core/sender.hpp"
 #include "../core/defs.hpp"
 #include "../core/buffer.hpp"
-#include "../util.hpp"
+#include <binelpro/os.hpp>
+#include <binelpro/log.hpp>
 #include <atomic>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
@@ -12,6 +13,7 @@
 
 namespace interproc {
     namespace ipc {
+        using bp::Log;
         using namespace boost::interprocess;
 
         template <typename buffer_type = interproc::buffer >
@@ -24,7 +26,7 @@ namespace interproc {
                 close();
             }
 
-            explicit sender_impl(const std::string &_endpoint) : ep_(_endpoint) {
+            explicit sender_impl(const std::string &_endpoint) : ep_(_endpoint), msg_cnt_(0) {
 //                close();
             }
 
@@ -45,7 +47,7 @@ namespace interproc {
                     throw std::runtime_error("message queue destroyed");
                 }
 
-                std::string uid(std::to_string(getmypid()).append(":").append(std::to_string(msg_cnt_)));
+                std::string uid(std::to_string(bp::getmypid()).append(":").append(std::to_string(msg_cnt_)));
                 msg_cnt_++;
 
                 shared_memory_object shm_obj(create_only, uid.c_str(), read_write);
@@ -62,7 +64,7 @@ namespace interproc {
                     Log::d("failed to send");
                     shared_memory_object::remove(uid.c_str());
                     throw std::runtime_error("failed to send message");
-                };
+                }
             };
 
             virtual void close(){
