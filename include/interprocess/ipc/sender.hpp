@@ -9,6 +9,7 @@
 #include <atomic>
 #include <boost/interprocess/shared_memory_object.hpp>
 #include <boost/interprocess/ipc/message_queue.hpp>
+#include <boost/interprocess/sync/named_mutex.hpp>
 
 
 namespace interproc {
@@ -19,6 +20,7 @@ namespace interproc {
         template <typename buffer_type = interproc::buffer >
         class sender_impl: public interproc::sender<buffer_type> {
             std::unique_ptr<message_queue>  mq_;
+            std::unique_ptr<named_mutex>    queue_mutex_;
             std::string                     ep_;
             std::atomic_ullong              msg_cnt_;
         public:
@@ -36,6 +38,7 @@ namespace interproc {
                 Log::d("connecting");
                 try {
                     mq_ = std::make_unique<message_queue>(open_only, ep_.c_str());
+                    queue_mutex_=std::make_unique<named_mutex>(open_only, (ep_+std::string(".mutex")).c_str());
                 } catch (...) {
                     throw std::runtime_error("failed to connect to message queue");
                 }
@@ -50,17 +53,21 @@ namespace interproc {
                 std::string uid(std::to_string(bp::getmypid()).append(":").append(std::to_string(msg_cnt_)));
                 msg_cnt_++;
 
-                shared_memory_object shm_obj(create_only, uid.c_str(), read_write);
-                shm_obj.truncate(_buf.size()+BLOCK_DESCRIPTOR_SIZE);
-                mapped_region region(shm_obj, read_write);
-
-                // TODO: write receiver cnt
-                std::memset(region.get_address(), BLOCK_DESCRIPTOR_SIZE, 0);
-                std::memcpy(static_cast<byte_t*>(region.get_address())+BLOCK_DESCRIPTOR_SIZE, _buf.data(), _buf.size());
+                try {
+                    shared_memory_object shm_obj(create_only, uid.c_str(), read_write);
+                    shm_obj.truncate(_buf.size() + BLOCK_DESCRIPTOR_SIZE);
+                    mapped_region region(shm_obj, read_write);
+                    // TODO: write receiver cnt
+                    std::memset(region.get_address(), BLOCK_DESCRIPTOR_SIZE, 0);
+                    std::memcpy(static_cast<byte_t*>(region.get_address())+BLOCK_DESCRIPTOR_SIZE, _buf.data(), _buf.size());
+                } catch (boost::interprocess::interprocess_exception &_e) {
+                    throw std::runtime_error(std::string("failed to open shmem ").append(uid).append(":\n")+_e.what());
+                }
 
                 buffer_type buf(uid, true);
 
-                if (!mq_->try_send(buf.data(), buf.size(), 0)){
+                std::lock_guard<named_mutex> lock(*queue_mutex_);
+                if (!mq_ || !mq_->try_send(buf.data(), buf.size(), 0)){
                     Log::d("failed to send");
                     shared_memory_object::remove(uid.c_str());
                     throw std::runtime_error("failed to send message");
