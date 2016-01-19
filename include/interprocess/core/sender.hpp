@@ -15,7 +15,8 @@ namespace interproc {
 
         virtual void close() = 0;
 
-        //TODO: on_error function
+        // TODO: on_error function
+        // TODO: on_disconnect function
     };
 
     using default_sender = sender<>;

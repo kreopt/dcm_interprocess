@@ -76,9 +76,6 @@ namespace interproc {
 
             virtual void close(){
                 if (mq_) {
-                    try {
-                        message_queue::remove(ep_.c_str());
-                    } catch(...) {}
                     mq_.reset();
                 }
             };
