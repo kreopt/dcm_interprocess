@@ -17,10 +17,10 @@ namespace interproc {
 
     using namespace bp::literals;
 
-    enum class protocol : bp::symbol_t::hash_type {
-        ipc = "ipc"_sym,
-        tcp = "tcp"_sym,
-        unix = "unix"_sym
+    enum class protocol : bp::symbol::hash_type {
+        ipc = "ipc"_hash,
+        tcp = "tcp"_hash,
+        unix = "unix"_hash
     };
 
     inline std::pair<std::string, std::string> parse_endpoint(const std::string &_ep) {
