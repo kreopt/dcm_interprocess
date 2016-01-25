@@ -14,6 +14,7 @@
 #include <boost/interprocess/sync/named_mutex.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include "../core/listener.hpp"
+#include "../core/processing_queue.hpp"
 
 namespace interproc {
     namespace ipc {
@@ -28,7 +29,7 @@ namespace interproc {
             std::unique_ptr<std::thread>         listener_thread_;
             std::string                          ep_;
             std::atomic_bool                     stopped_;
-            interproc::queue_based_buf_handler<buffer_type> handler_queue_;
+            interproc::processing_queue<buffer_type>        handler_queue_;
 
             std::string read_uid() {
                 uint32_t    priority;

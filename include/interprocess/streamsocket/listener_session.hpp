@@ -8,6 +8,7 @@
 #include <atomic>
 
 #include "../core/listener.hpp"
+#include "../core/processing_queue.hpp"
 #include "reader.hpp"
 #include "writer.hpp"
 
@@ -18,7 +19,7 @@ namespace interproc {
                                  public std::enable_shared_from_this<interproc::session<buffer_type>> {
         private:
             std::shared_ptr<socket_type>         socket_;
-            interproc::queue_based_buf_handler<buffer_type> handler_queue_;
+            interproc::processing_queue<buffer_type> handler_queue_;
 
         protected:
             std::atomic_bool                     eof_;

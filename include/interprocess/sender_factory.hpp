@@ -7,7 +7,7 @@
 
 namespace interproc {
     template <typename buffer_type = interproc::buffer>
-    inline std::shared_ptr<sender<buffer_type>> make_sender(const std::string &_ep) {
+    inline typename endpoint<buffer_type>::ptr make_sender(const std::string &_ep) {
         auto info = parse_endpoint(_ep);
         switch (protocol(bp::symbol(info.first).hash)) {
             case protocol::unix:

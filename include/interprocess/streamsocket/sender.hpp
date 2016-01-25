@@ -9,7 +9,7 @@
 #include <iostream>
 
 #include "../core/buffer.hpp"
-#include "../core/sender.hpp"
+#include "interprocess/core/endpoint.hpp"
 #include "endpoint.hpp"
 #include "reader.hpp"
 #include "writer.hpp"
@@ -20,7 +20,7 @@ namespace interproc {
     namespace streamsocket {
 
         template<typename protocol_type, typename buffer_type = interproc::buffer>
-        class sender_impl : public sender<buffer_type>,
+        class sender_impl : public endpoint<buffer_type>,
                             public std::enable_shared_from_this<sender_impl<protocol_type>> {
         public:
             using ptr = sender_impl<protocol_type, buffer_type>;
@@ -40,7 +40,7 @@ namespace interproc {
             // Event handlers
             void handle_connect(const asio::error_code &error) {
                 if (!error) {
-                    std::cerr << "DCM sender connected" << std::endl;
+                    std::cerr << "DCM endpoint connected" << std::endl;
                     socket_->set_option(typename socket_type::enable_connection_aborted(true));
                     socket_->set_option(typename socket_type::linger(true, 30));
                     connected_ = true;
@@ -74,9 +74,11 @@ namespace interproc {
             }
 
             ~sender_impl() {
-                std::cout << "destroy sender" << std::endl;
+                std::cout << "destroy endpoint" << std::endl;
                 close();
             }
+
+            virtual bool connected() const override { return connected_; }
 
             virtual void connect() override {
                 if (!stopped_) {
@@ -101,17 +103,17 @@ namespace interproc {
                 });
             }
 
-            virtual void send(const buffer_type &_buf) override {
+            virtual void send(const message<buffer_type> &_buf) const override {
                 if (connected_) {
                     std::cout << "try send" << std::endl;
-                    this->writer_->write(_buf);
+                    this->writer_->write(_buf.data);
                 } else {
                     std::cout << "failed to send: client disconnected" << std::endl;
                 }
             }
 
             virtual void close() override {
-                std::cerr << "close sender" << std::endl;
+                std::cerr << "close endpoint" << std::endl;
                 // TODO: wait pending operations if necessary
                 stopped_ = true;
                 if (socket_->is_open()) {

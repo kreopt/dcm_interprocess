@@ -17,6 +17,9 @@ namespace interproc {
 
     using namespace bp::literals;
 
+    template <typename msg_type>
+    using msg_handler_t = std::function<void(msg_type &&)>;
+
     enum class protocol : bp::symbol::hash_type {
         ipc = "ipc"_hash,
         tcp = "tcp"_hash,
