@@ -58,6 +58,7 @@ namespace interproc {
 
             virtual void start() override {
                 Log::d("start listener");
+                stopped_ = false;
                 listener_thread_ = std::make_unique<std::thread>([this](){
                     while (!stopped_) {
                         std::string uuid = read_uid();
@@ -89,7 +90,7 @@ namespace interproc {
                 handler_queue_.stop();
             };
             virtual void wait_until_stopped() override {
-                if (listener_thread_->joinable()) {
+                if (listener_thread_ && listener_thread_->joinable()) {
                     listener_thread_->join();
                 }
                 handler_queue_.wait_until_stopped();
