@@ -80,8 +80,11 @@ namespace interproc {
                         }
                     }
                 });
-                // TODO: dynamically update on_message handler
-                handler_queue_.on_message = this->on_message;
+                handler_queue_.on_message = [this](buffer_type &&_buf){
+                    if (this->on_message) {
+                        this->on_message(std::forward<buffer_type>(_buf));
+                    }
+                };
                 handler_queue_.start();
             };
             virtual void stop() override {

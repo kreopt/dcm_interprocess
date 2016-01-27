@@ -1,7 +1,7 @@
 #ifndef INTERPROCESS_IPC_SENDER_HPP
 #define INTERPROCESS_IPC_SENDER_HPP
 
-#include "interprocess/core/endpoint.hpp"
+#include "../core/endpoint.hpp"
 #include "../core/defs.hpp"
 #include "../core/buffer.hpp"
 #include <binelpro/os.hpp>

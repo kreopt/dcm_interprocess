@@ -9,7 +9,7 @@
 #include <iostream>
 
 #include "../core/buffer.hpp"
-#include "interprocess/core/endpoint.hpp"
+#include "../core/endpoint.hpp"
 #include "endpoint.hpp"
 #include "reader.hpp"
 #include "writer.hpp"

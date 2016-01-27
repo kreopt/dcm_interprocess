@@ -58,6 +58,8 @@ namespace interproc {
         }
 
     public:
+        using ptr = std::shared_ptr<sender<buffer_type>>;
+
         sender() : msg_cnt_(0), sender_queue_(QUEUE_SIZE){
             sender_queue_.on_message = [](queue_item &&_msg){
                 // send to ep list
@@ -86,6 +88,14 @@ namespace interproc {
         };
         void send(const std::vector<typename endpoint<buffer_type>::ptr> &_ep, const buffer_type &_buf) {
             send(_ep, std::move(buffer_type(_buf)));
+        };
+        void send(const typename endpoint<buffer_type>::ptr _ep, const buffer_type &_buf) {
+            std::vector<typename endpoint<buffer_type>::ptr> v{_ep};
+            send(v, std::forward<buffer_type>(_buf));
+        };
+        void send(const typename endpoint<buffer_type>::ptr _ep, buffer_type &&_buf) {
+            std::vector<typename endpoint<buffer_type>::ptr> v{_ep};
+            send(v, std::forward<buffer_type>(_buf));
         };
         void close() {
             sender_queue_.stop();
