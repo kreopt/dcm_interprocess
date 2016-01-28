@@ -11,7 +11,12 @@
 namespace interproc {
     using bp::Log;
 
-    template <typename item_type = interproc::buffer >
+    class queue_item {
+    public:
+        virtual size_t size() const = 0;
+    };
+
+    template <typename item_type = interproc::buffer>
     class processing_queue {
         std::unique_ptr<std::thread>         handler_thread_;
         std::deque<item_type>                queue_;
@@ -24,18 +29,25 @@ namespace interproc {
 
         void handle_thread_func() {
             while (!stopped_) {
-                std::unique_lock<std::mutex> lck(queue_mutex_);
-                queue_cv_.wait(lck, [this](){return notified_;});
-                if (stopped_) {
-                    return;
-                }
                 item_type buf;
-                std::swap(queue_.front(), buf);
-                queue_.pop_front();
-                current_size_-=buf.size();
+                {
+                    std::unique_lock<std::mutex> lck(queue_mutex_);
+                    queue_cv_.wait(lck, [this]() { return notified_; });
+                    if (stopped_) {
+                        return;
+                    }
+                    std::swap(queue_.front(), buf);
+                    queue_.pop_front();
+                    current_size_ -= get_buf_size(buf);
+                    notified_=false;
+                }
                 this->on_message(std::move(buf));
-                notified_=false;
             }
+        }
+
+    protected:
+        virtual size_t  get_buf_size(const item_type &buf) const {
+            return buf.size();
         }
     public:
 
@@ -43,6 +55,10 @@ namespace interproc {
 
         processing_queue() = delete;
         processing_queue(size_t _queue_size): max_size_(_queue_size), current_size_(0) {
+        }
+        ~processing_queue() {
+            stop();
+            wait_until_stopped();
         }
 
         void stop() {
@@ -62,15 +78,15 @@ namespace interproc {
         }
         void enqueue(item_type &&_buf) {
             if (this->on_message) {
-                // TODO: check for queue overflow
-                if (current_size_+_buf.size() < max_size_) {
+                auto buf_size = get_buf_size(_buf);
+                if (current_size_+buf_size < max_size_) {
                     std::unique_lock<std::mutex> lck(queue_mutex_);
-                    current_size_ += _buf.size();
+                    current_size_ += buf_size;
                     queue_.emplace_back(std::move(_buf));
                     notified_ = true;
                     queue_cv_.notify_one();
                 } else {
-                    Log::w(std::string("queue is full. dropping buffer ").append(std::to_string(current_size_+_buf.size())).append(" ").append(std::to_string(max_size_)));
+                    Log::w(std::string("queue is full. dropping buffer ").append(std::to_string(current_size_+buf_size)).append(" ").append(std::to_string(max_size_)));
                 }
             }
         }

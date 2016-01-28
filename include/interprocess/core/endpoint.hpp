@@ -44,7 +44,7 @@ namespace interproc {
             std::vector<typename endpoint<buffer_type>::ptr> endpoints;
             message<buffer_type>                             msg;
 
-            size_t size() {
+            size_t size() const {
                 return msg.data.size() + msg.id.size() + endpoints.size()*sizeof(typename endpoint<buffer_type>::ptr);
             }
         };
