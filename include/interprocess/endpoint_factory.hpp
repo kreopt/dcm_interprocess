@@ -7,13 +7,13 @@
 
 namespace interproc {
     template <typename buffer_type = interproc::buffer>
-    inline typename endpoint<buffer_type>::ptr make_sender(const std::string &_ep) {
+    inline typename endpoint<buffer_type>::ptr make_endpoint(const std::string &_ep) {
         auto info = parse_endpoint(_ep);
         switch (protocol(bp::symbol(info.first).hash)) {
             case protocol::unix:
-                return std::make_shared<streamsocket::unix_sender<buffer_type>>(info.second);
+                return std::make_shared<streamsocket::unix_endpoint<buffer_type>>(info.second);
             case protocol::tcp:
-                return std::make_shared<streamsocket::tcp_sender<buffer_type>>(info.second);
+                return std::make_shared<streamsocket::tcp_endpoint<buffer_type>>(info.second);
             case protocol::ipc:
                 return std::make_shared<ipc::ipc_sender<buffer_type>>(info.second);
             default:

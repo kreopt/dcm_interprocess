@@ -16,7 +16,7 @@ namespace filesystem = boost::filesystem;
 #endif
 
 #include "../core/listener.hpp"
-#include "endpoint.hpp"
+#include "asio_endpoint.hpp"
 #include "listener_session.hpp"
 
 
@@ -95,7 +95,7 @@ namespace interproc {
                     io_service_(std::make_shared<asio::io_service>()),
                     signals_(*io_service_) {
                 prepare_endpoint(_endpoint);
-                endpoint_type ep = interproc::make_endpoint<endpoint_type>(_endpoint, *io_service_);
+                endpoint_type ep = interproc::streamsocket::make_endpoint<endpoint_type>(_endpoint, *io_service_);
                 acceptor_ = std::make_shared<acceptor_type>(*io_service_, ep);
             }
 
