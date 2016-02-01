@@ -7,6 +7,7 @@
 
 #include "endpoint.hpp"
 #include "../endpoint_factory.hpp"
+#include "../core/defs.hpp"
 
 namespace interproc {
 
@@ -85,6 +86,7 @@ namespace interproc {
         sender<buffer_type>     sender_;
         typename endpoint<buffer_type>::ptr endpoint_;
     public:
+        using ptr = std::shared_ptr<p2p_sender<buffer_type>>;
         p2p_sender(typename endpoint<buffer_type>::ptr _ep) : endpoint_(_ep) {}
         p2p_sender(const char* _ep) : endpoint_(make_endpoint(_ep)) {}
 
@@ -118,5 +120,28 @@ namespace interproc {
         };
     };
 
+    template <typename buffer_type = interproc::buffer>
+    typename p2p_sender<buffer_type>::ptr make_p2p_sender(const std::string &_endpoint) {
+        // TODO: use make_endpoint function
+        auto info = parse_endpoint(_endpoint);
+        typename endpoint<buffer_type>::ptr endpoint;
+        switch (protocol(bp::symbol(info.first).hash)) {
+//            case protocol::unix:
+//                return std::make_shared<streamsocket::unix_listener<buffer_type>>(info.second);
+            case protocol::tcp:
+                endpoint = std::make_shared<streamsocket::tcp_endpoint<buffer_type>>(info.second);
+                break;
+            case protocol::ipc:
+//#ifndef WIN32
+//                endpoint = std::make_shared<streamsocket::unix_endpoint <buffer_type>>(info.second);
+//#else
+                endpoint = std::make_shared<ipc::ipc_endpoint<buffer_type>>(info.second);
+//#endif
+                break;
+            default:
+                throw std::runtime_error("invalid protocol. supported types are ipc and tcp");
+        }
+        return std::make_shared<p2p_sender<buffer_type>>(endpoint);
+    }
 }
 #endif //INTERPROCESS_SENDER_HPP

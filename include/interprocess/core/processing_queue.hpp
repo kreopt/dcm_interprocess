@@ -32,7 +32,9 @@ namespace interproc {
                 item_type buf;
                 {
                     std::unique_lock<std::mutex> lck(queue_mutex_);
-                    queue_cv_.wait(lck, [this]() { return notified_; });
+                    if (!queue_.size()) {
+                        queue_cv_.wait(lck, [this]() { return notified_; });
+                    }
                     if (stopped_) {
                         return;
                     }
@@ -67,7 +69,7 @@ namespace interproc {
             queue_cv_.notify_all();
         }
         void wait_until_stopped() {
-            if (handler_thread_->joinable()) {
+            if (handler_thread_ && handler_thread_->joinable()) {
                 handler_thread_->join();
             }
         }

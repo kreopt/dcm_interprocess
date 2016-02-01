@@ -17,19 +17,20 @@ namespace interproc {
         using bp::Log;
         using namespace boost::interprocess;
 
+        // TODO: use unix socket or windows named pipe for message queue
 
         template <typename buffer_type = interproc::buffer >
-        class sender_impl: public interproc::endpoint<buffer_type> {
+        class endpoint_impl : public interproc::endpoint<buffer_type> {
             std::unique_ptr<message_queue>  mq_;
             std::unique_ptr<named_mutex>    queue_mutex_;
             std::string                     ep_;
             mutable std::atomic_bool        connected_;
         public:
-            virtual ~sender_impl() {
+            virtual ~endpoint_impl() {
                 close();
             }
 
-            explicit sender_impl(const std::string &_endpoint) : ep_(_endpoint), connected_(false) {
+            explicit endpoint_impl(const std::string &_endpoint) : ep_(_endpoint), connected_(false) {
             }
 
             virtual bool connected() const {return connected_;};
@@ -85,7 +86,7 @@ namespace interproc {
         };
 
         template <typename buffer_type>
-        using ipc_sender = sender_impl<buffer_type>;
+        using ipc_endpoint = endpoint_impl<buffer_type>;
     }
 }
 #endif //INTERPROCESS_SENDER_HPP
