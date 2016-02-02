@@ -90,13 +90,13 @@ namespace dcm  {
         p2p_sender(typename endpoint<buffer_type>::ptr _ep) : endpoint_(_ep) {}
         p2p_sender(const char* _ep) : endpoint_(make_endpoint(_ep)) {}
 
-        void connect() {
+        std::future<bool> connect() {
             if (endpoint_) {
-                endpoint_->connect();
+                sender_.connect();
+                return endpoint_->connect();
             } else {
                 throw sender_error("endpoint is not configured");
             }
-            sender_.connect();
         };
         void send(const buffer_type &_buf) {
             if (endpoint_) {

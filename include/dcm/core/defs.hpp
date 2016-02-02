@@ -16,6 +16,7 @@ namespace dcm  {
     const size_t   MQ_AMOUNT = 100;
 
     using namespace bp::literals;
+    using namespace std::string_literals;
 
     template <typename msg_type>
     using msg_handler_t = std::function<void(msg_type &&)>;
@@ -29,7 +30,7 @@ namespace dcm  {
     inline std::pair<std::string, std::string> parse_endpoint(const std::string &_ep) {
         auto pos = _ep.find("://");
         if (pos == std::string::npos) {
-            throw std::runtime_error("invalid protocol. supported types are ipc, tcp and unix");
+            throw std::runtime_error("invalid protocol. supported types are ipc, tcp and p2pipc ("s+_ep+")"s);
         }
         return std::make_pair(_ep.substr(0, pos), _ep.substr(pos + 3));
     }

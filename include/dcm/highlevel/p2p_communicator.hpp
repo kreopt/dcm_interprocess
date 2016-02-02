@@ -13,6 +13,7 @@ namespace dcm  {
     class p2p : public event_listener<serializer_type> {
     public:
         using ptr = std::shared_ptr<p2p<serializer_type>>;
+        std::function<void(const bp::structure::ptr)> on_send_greeting;
 
     private:
         bool sender_stopped_;
@@ -23,6 +24,14 @@ namespace dcm  {
 
         std::string listener_ep_;
 
+        void send_greeting() {
+            auto structure = bp::structure::create();
+            structure->emplace("endpoint"_sym, listener_ep_);
+            if (on_send_greeting) {
+                on_send_greeting(structure);
+            }
+            send("p2p.greeting"_sym, std::move(structure));
+        }
     public:
         p2p() : sender_stopped_(true), listener_stopped_(true) {}
 
@@ -32,10 +41,12 @@ namespace dcm  {
             wait_until_stopped();
         }
 
-        void connect(const std::string &_endpoint) {
+        void connect(const std::string &_endpoint, bool greet) {
             sender_ = dcm::make_p2p_sender(_endpoint);
-            sender_->connect();
-
+            auto connected = sender_->connect().get();
+            if (greet && connected && !listener_ep_.empty()) {
+                send_greeting();
+            }
         }
         void disconnect() {
             sender_->close();
@@ -45,12 +56,10 @@ namespace dcm  {
         void start(const std::string &_endpoint) {
             listener_ep_ = _endpoint;
             listener_ = make_listener(_endpoint);
-            listener_->on_message = std::bind(&event_listener<serializer_type>::handle_message, this, std::placeholders::_1);
+            listener_->on_message = std::bind(&p2p<serializer_type>::handle_message, this, std::placeholders::_1);
             listener_->start();
             if (sender_) {
-                auto structure = bp::structure::create();
-                structure->emplace("endpoint"_sym, listener_ep_);
-                send("listener.start"_sym, std::move(structure));
+                send_greeting();
             }
         };
 
@@ -61,9 +70,7 @@ namespace dcm  {
                 listener_->start();
             }
             if (sender_) {
-                auto structure = bp::structure::create();
-                structure->emplace("endpoint"_sym, listener_ep_);
-                send("listener.start"_sym, std::move(structure));
+                send_greeting();
             }
         }
 
