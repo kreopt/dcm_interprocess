@@ -16,11 +16,11 @@
 
 using asio::ip::tcp;
 
-namespace interproc {
+namespace dcm  {
     namespace streamsocket {
 
         namespace {
-            template<typename protocol_type, typename buffer_type = interproc::buffer>
+            template<typename protocol_type, typename buffer_type = dcm::buffer>
             class endpoint_impl : public endpoint<buffer_type>,
                                   public std::enable_shared_from_this<endpoint_impl<protocol_type>> {
             public:
@@ -37,6 +37,7 @@ namespace interproc {
                 std::shared_ptr<streamsocket::writer<socket_type, buffer_type>> writer_;
                 std::atomic_bool stopped_;
                 std::atomic_bool connected_;
+                std::promise<bool> connect_promise_;
 
                 // Event handlers
                 void handle_connect(const asio::error_code &error) {
@@ -45,6 +46,7 @@ namespace interproc {
                         socket_->set_option(typename socket_type::enable_connection_aborted(true));
                         socket_->set_option(typename socket_type::linger(true, 30));
                         connected_ = true;
+                        connect_promise_.set_value(true);
                         this->reader_->read();
                     } else {
                         //std::cerr << "DCM Client failed to connect: " << error.message() << std::endl;
@@ -58,7 +60,7 @@ namespace interproc {
                     stopped_ = true;
                     connected_ = false;
                     io_service_ = std::make_shared<asio::io_service>();
-                    endpoint_ = interproc::streamsocket::make_endpoint<endpoint_type>(_endpoint, *io_service_);
+                    endpoint_ = dcm::streamsocket::make_endpoint<endpoint_type>(_endpoint, *io_service_);
                     socket_ = std::make_shared<socket_type>(*io_service_);
                     reader_ = std::make_shared<reader<socket_type>>(socket_);
                     writer_ = std::make_shared<writer<socket_type>>(socket_);
@@ -81,11 +83,14 @@ namespace interproc {
 
                 virtual bool connected() const override { return connected_; }
 
-                virtual void connect() override {
+                virtual std::future<bool> connect() override {
                     if (!stopped_) {
-                        return;
+                        return connect_promise_.get_future();
                     }
                     stopped_ = false;
+
+                    connect_promise_ = std::promise<bool>();
+
                     client_thread_ = std::thread([this]() {
                         while (!stopped_) {
                             if (socket_->is_open()) {
@@ -99,14 +104,17 @@ namespace interproc {
                                                                         this->shared_from_this(),
                                                                         std::placeholders::_1));
                             io_service_->run();
+                            connect_promise_.set_value(false);
                             connected_ = false;
                             //std::cout << "disconnected" << std::endl;
                             std::this_thread::sleep_for(std::chrono::seconds(1));
                         }
                     });
+                    return connect_promise_.get_future();
                 }
 
                 virtual void send(const message<buffer_type> &_buf) const override {
+                    // TODO: sender queue. watch connection state (disconnected, connecting, connected)
                     if (connected_) {
                         std::cout << "try send" << std::endl;
                         this->writer_->write(_buf.data);

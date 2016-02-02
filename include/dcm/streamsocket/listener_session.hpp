@@ -12,14 +12,14 @@
 #include "reader.hpp"
 #include "writer.hpp"
 
-namespace interproc {
+namespace dcm  {
     namespace streamsocket {
-        template<typename socket_type, typename buffer_type = interproc::buffer >
-        class listener_session : public interproc::session<buffer_type>,
-                                 public std::enable_shared_from_this<interproc::session<buffer_type>> {
+        template<typename socket_type, typename buffer_type = dcm::buffer >
+        class listener_session : public dcm::session<buffer_type>,
+                                 public std::enable_shared_from_this<dcm::session<buffer_type>> {
         private:
             std::shared_ptr<socket_type>         socket_;
-            interproc::processing_queue<buffer_type> handler_queue_;
+            dcm::processing_queue<buffer_type> handler_queue_;
 
         protected:
             std::atomic_bool                     eof_;
@@ -91,9 +91,9 @@ namespace interproc {
                 return socket_;
             }
 
-            interproc::msg_handler_t<buffer_type>                    on_message;
+            dcm::msg_handler_t<buffer_type>                    on_message;
             std::function<void(typename session<buffer_type>::ptr _session)> on_error;
-            interproc::connect_handler_t<buffer_type> on_connect;
+            dcm::connect_handler_t<buffer_type> on_connect;
         };
     }
 }

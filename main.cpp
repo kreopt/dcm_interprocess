@@ -1,15 +1,18 @@
-#include "interprocess/interprocess.hpp"
+#include "dcm/dcm.hpp"
+#include <binelpro/log.hpp>
 #include <chrono>
+
+using bp::Log;
 int main(){
     using namespace std::chrono_literals;
 
-    auto listener = interproc::make_listener<>("ipc://test.sock");
-    auto sender = std::make_shared<interproc::p2p_sender<>>("ipc://test.sock");
+    auto listener = dcm::make_listener<>("ipc://test.sock");
+    auto sender = dcm::make_p2p_sender<>("ipc://test.sock");
 
-    auto buf = interproc::buffer(new char[1920*1080*3], 1920*1080*3);
+    auto buf = dcm::buffer(new char[1920*1080*3], 1920*1080*3);
 
-    listener->on_message = [](interproc::buffer &&_buf){
-        interproc::Log::d("received");
+    listener->on_message = [](dcm::buffer &&_buf){
+        Log::d("received");
     };
 
     listener->start();

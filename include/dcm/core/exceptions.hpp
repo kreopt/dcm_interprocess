@@ -7,7 +7,7 @@
 
 #include <stdexcept>
 
-namespace interproc {
+namespace dcm  {
     class exception : public std::exception {
         std::string reason_;
     public:

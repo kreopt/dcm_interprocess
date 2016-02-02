@@ -9,10 +9,10 @@
 #include <binelpro/log.hpp>
 #include "buffer.hpp"
 
-namespace interproc {
+namespace dcm  {
     using bp::Log;
 
-    template <typename buffer_type = interproc::buffer >
+    template <typename buffer_type = dcm::buffer >
     class session {
     public:
         using ptr = typename std::shared_ptr<session<buffer_type>>;
@@ -23,11 +23,11 @@ namespace interproc {
         virtual void start() = 0;
     };
 
-    template <typename buffer_type = interproc::buffer >
+    template <typename buffer_type = dcm::buffer >
     using connect_handler_t = std::function<void(typename session<buffer_type>::ptr)>;
 
 
-    template <typename buffer_type = interproc::buffer >
+    template <typename buffer_type = dcm::buffer >
     class listener {
     public:
         typedef typename std::remove_reference<buffer_type>::type buf_type;
@@ -35,6 +35,8 @@ namespace interproc {
 
         virtual ~listener() {}
 
+        virtual std::string get_endpoint() const = 0;
+        virtual bool is_running() const = 0;
         virtual void start() = 0;
         virtual void stop() = 0;
         virtual void wait_until_stopped() = 0;

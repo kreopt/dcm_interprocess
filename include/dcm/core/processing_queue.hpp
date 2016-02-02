@@ -8,7 +8,7 @@
 #include <condition_variable>
 #include <atomic>
 
-namespace interproc {
+namespace dcm  {
     using bp::Log;
 
     class queue_item {
@@ -16,7 +16,7 @@ namespace interproc {
         virtual size_t size() const = 0;
     };
 
-    template <typename item_type = interproc::buffer>
+    template <typename item_type = dcm::buffer>
     class processing_queue {
         std::unique_ptr<std::thread>         handler_thread_;
         std::deque<item_type>                queue_;

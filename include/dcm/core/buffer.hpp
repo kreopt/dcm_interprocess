@@ -6,7 +6,7 @@
 #include <type_traits>
 #include "defs.hpp"
 
-namespace interproc {
+namespace dcm  {
 
     class buffer {
         char *data_;
@@ -131,12 +131,12 @@ namespace interproc {
     };
 
     inline void write_size(obufstream& _s, block_descriptor_t _sz){
-        _s.write(reinterpret_cast<interproc::byte_t*>(&_sz), interproc::BLOCK_DESCRIPTOR_SIZE);
+        _s.write(reinterpret_cast<dcm::byte_t*>(&_sz), dcm::BLOCK_DESCRIPTOR_SIZE);
     }
 
     inline void read_size(ibufstream& _s, block_descriptor_t &_sz){
         byte_t* lb = reinterpret_cast<byte_t*>(&_sz);
-        _s.read(lb, interproc::BLOCK_DESCRIPTOR_SIZE);
+        _s.read(lb, dcm::BLOCK_DESCRIPTOR_SIZE);
     }
 }
 

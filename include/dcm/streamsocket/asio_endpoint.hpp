@@ -6,7 +6,7 @@
 #include <asio/local/stream_protocol.hpp>
 #include <asio/ip/tcp.hpp>
 
-namespace interproc {
+namespace dcm  {
     namespace streamsocket {
         template<typename endpoint_type,
                 typename = typename std::enable_if<

@@ -9,15 +9,15 @@
 #include "../endpoint_factory.hpp"
 #include "../core/defs.hpp"
 
-namespace interproc {
+namespace dcm  {
 
-    class sender_error : public interproc::exception {
+    class sender_error : public dcm::exception {
     public:
-        sender_error(const char* _reason): interproc::exception(_reason) {}
+        sender_error(const char* _reason): dcm::exception(_reason) {}
     };
 
     const size_t QUEUE_SIZE = 1024*1024*1024;       // TODO: make it configurable
-    template <typename buffer_type = interproc::buffer >
+    template <typename buffer_type = dcm::buffer >
     class sender {
         struct queue_item {
             std::vector<typename endpoint<buffer_type>::ptr> endpoints;
@@ -81,7 +81,7 @@ namespace interproc {
         };
     };
 
-    template <typename buffer_type = interproc::buffer >
+    template <typename buffer_type = dcm::buffer >
     class p2p_sender {
         sender<buffer_type>     sender_;
         typename endpoint<buffer_type>::ptr endpoint_;
@@ -120,27 +120,17 @@ namespace interproc {
         };
     };
 
-    template <typename buffer_type = interproc::buffer>
+    template <typename buffer_type = dcm::buffer>
     typename p2p_sender<buffer_type>::ptr make_p2p_sender(const std::string &_endpoint) {
-        // TODO: use make_endpoint function
+
         auto info = parse_endpoint(_endpoint);
-        typename endpoint<buffer_type>::ptr endpoint;
-        switch (protocol(bp::symbol(info.first).hash)) {
-//            case protocol::unix:
-//                return std::make_shared<streamsocket::unix_listener<buffer_type>>(info.second);
-            case protocol::tcp:
-                endpoint = std::make_shared<streamsocket::tcp_endpoint<buffer_type>>(info.second);
-                break;
-            case protocol::ipc:
-//#ifndef WIN32
-//                endpoint = std::make_shared<streamsocket::unix_endpoint <buffer_type>>(info.second);
-//#else
-                endpoint = std::make_shared<ipc::ipc_endpoint<buffer_type>>(info.second);
-//#endif
-                break;
-            default:
-                throw std::runtime_error("invalid protocol. supported types are ipc and tcp");
+        if (info.first == "ipc") {
+            info.first = "p2pipc";
         }
+        std::string p2p_endpoint = std::string(info.first).append("://").append(info.second);
+
+        auto endpoint = make_endpoint(p2p_endpoint);
+
         return std::make_shared<p2p_sender<buffer_type>>(endpoint);
     }
 }

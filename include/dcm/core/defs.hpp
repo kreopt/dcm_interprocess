@@ -5,7 +5,7 @@
 #include <sstream>
 #include <binelpro/symbol.hpp>
 
-namespace interproc {
+namespace dcm  {
     using block_descriptor_t = uint32_t;
     using byte_t = uint8_t;
     using ibufstream = std::basic_istringstream<byte_t>;
@@ -22,10 +22,8 @@ namespace interproc {
 
     enum class protocol : bp::symbol::hash_type {
         ipc = "ipc"_hash,
+        p2pipc = "p2pipc"_hash,
         tcp = "tcp"_hash
-#ifndef WIN32
-        ,unix = "unix"_hash
-#endif
     };
 
     inline std::pair<std::string, std::string> parse_endpoint(const std::string &_ep) {

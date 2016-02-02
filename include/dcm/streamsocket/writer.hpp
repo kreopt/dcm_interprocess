@@ -6,10 +6,10 @@
 #include <asio.hpp>
 #include "../core/buffer.hpp"
 
-namespace interproc {
+namespace dcm  {
     namespace streamsocket {
         // TODO: timeouts
-        template<typename socket_type, typename buffer_type = interproc::buffer>
+        template<typename socket_type, typename buffer_type = dcm::buffer>
         class writer {
         protected:
             std::shared_ptr<socket_type> socket_;

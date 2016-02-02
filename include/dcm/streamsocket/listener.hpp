@@ -20,13 +20,13 @@ namespace filesystem = boost::filesystem;
 #include "listener_session.hpp"
 
 
-namespace interproc {
+namespace dcm  {
     namespace streamsocket {
 
         template<typename protocol_type,
-                typename buffer_type = interproc::buffer,
-                template<typename, typename> class session_type_tpl = interproc::streamsocket::listener_session>
-        class listener_impl : public interproc::listener<buffer_type> {
+                typename buffer_type = dcm::buffer,
+                template<typename, typename> class session_type_tpl = dcm::streamsocket::listener_session>
+        class listener_impl : public dcm::listener<buffer_type> {
         public:
             using ptr           = listener_impl<protocol_type, buffer_type, session_type_tpl>;
             using endpoint_type = typename protocol_type::endpoint;
@@ -45,6 +45,7 @@ namespace interproc {
             std::thread                             server_thread_;
             std::mutex                              session_mutex_;
             asio::signal_set                        signals_;
+            std::string                             ep_;
 
             // Event handlers
             void handle_accept(session_ptr session, const asio::error_code &error) {
@@ -93,9 +94,9 @@ namespace interproc {
             // Constructor
             explicit listener_impl(const std::string &_endpoint) :
                     io_service_(std::make_shared<asio::io_service>()),
-                    signals_(*io_service_) {
+                    signals_(*io_service_), ep_(_endpoint) {
                 prepare_endpoint(_endpoint);
-                endpoint_type ep = interproc::streamsocket::make_endpoint<endpoint_type>(_endpoint, *io_service_);
+                endpoint_type ep = dcm::streamsocket::make_endpoint<endpoint_type>(_endpoint, *io_service_);
                 acceptor_ = std::make_shared<acceptor_type>(*io_service_, ep);
             }
 
@@ -106,12 +107,14 @@ namespace interproc {
             }
 
             [[deprecated]]
-            virtual void broadcast(const interproc::buffer &_buf) {
+            virtual void broadcast(const dcm::buffer &_buf) {
                 for (auto &session: sessions_) {
                     session->send(_buf);
                 }
             }
 
+            virtual bool is_running() const { return !io_service_->stopped(); };
+            virtual std::string get_endpoint() const override { return ep_; }
             virtual void start() override {
                 server_thread_ = std::thread([this]() {
                     start_accept();
@@ -132,10 +135,10 @@ namespace interproc {
         };
 
         template<typename buffer_type>
-        using tcp_listener = listener_impl<asio::ip::tcp, buffer_type, interproc::streamsocket::listener_session>;
+        using tcp_listener = listener_impl<asio::ip::tcp, buffer_type, dcm::streamsocket::listener_session>;
 
         template<typename buffer_type>
-        using unix_listener = listener_impl<asio::local::stream_protocol, buffer_type, interproc::streamsocket::listener_session>;
+        using unix_listener = listener_impl<asio::local::stream_protocol, buffer_type, dcm::streamsocket::listener_session>;
 
     }
 }

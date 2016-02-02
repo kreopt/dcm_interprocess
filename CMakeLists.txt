@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.2)
-project(interprocess)
+project(dcm)
 
 include_directories(include/)
 add_definitions(-std=c++1z -DUSE_BOOST_LOG)
@@ -17,7 +17,7 @@ add_executable(${PROJECT_NAME} ${HEADERS}
 target_link_libraries(${PROJECT_NAME} ${DCMIPC_EXT_LIBRARIES})
 
 #install(TARGETS dcm_ipc DESTINATION lib/dcm/)
-install(DIRECTORY include/ DESTINATION include/dcm/ FILES_MATCHING PATTERN "*.hpp")
+install(DIRECTORY include/ DESTINATION include/ FILES_MATCHING PATTERN "*.hpp")
 install(FILES "cmake/DcmIpcConfig.cmake" DESTINATION ${CMAKECONFIG_INSTALL_DIR})
 install(FILES "cmake/DcmIpcVersion.cmake" DESTINATION ${CMAKECONFIG_INSTALL_DIR})
 install(FILES "cmake/ExtLibs.cmake" DESTINATION ${CMAKECONFIG_INSTALL_DIR})

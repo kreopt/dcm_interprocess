@@ -9,10 +9,10 @@
 #include <asio/buffers_iterator.hpp>
 #include "../core/buffer.hpp"
 
-namespace interproc {
+namespace dcm  {
     namespace streamsocket {
         // TODO: timeouts
-        template<typename socket_type, typename buffer_type = interproc::buffer>
+        template<typename socket_type, typename buffer_type = dcm::buffer>
         class reader {
             using handler_t = std::function<void(const asio::error_code &_error, const long unsigned int&)>;
             using socket_ptr = std::shared_ptr<socket_type>;
@@ -25,7 +25,7 @@ namespace interproc {
         public:
 
             explicit reader(socket_ptr _socket) : socket_(_socket) {
-                default_handler_ = std::bind(&interproc::streamsocket::reader<socket_type>::handle_read, this, std::placeholders::_1);
+                default_handler_ = std::bind(&dcm::streamsocket::reader<socket_type>::handle_read, this, std::placeholders::_1);
             };
 
             void read(int _size = -1, handler_t _handler = nullptr) {
