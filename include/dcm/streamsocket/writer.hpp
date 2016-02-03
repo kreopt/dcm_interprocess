@@ -20,12 +20,17 @@ namespace dcm  {
             }
 
             void write(const buffer_type &_buf) {
-                asio::async_write(*socket_, asio::buffer(_buf.data(), _buf.size()),
-                        std::bind(&writer<socket_type>::handle_write, this, std::placeholders::_1));
+                std::vector<asio::const_buffer> buffers;
+                block_descriptor_t size = _buf.size();
+                buffers.push_back(asio::buffer(&size, BLOCK_DESCRIPTOR_SIZE));
+                buffers.push_back(asio::buffer(_buf.data(), _buf.size()));
+
+                asio::async_write(*socket_, buffers,
+                        std::bind(&writer<socket_type>::handle_write, this, std::placeholders::_1, std::placeholders::_2));
             }
 
             // Event handlers
-            void handle_write(const asio::error_code &error) {
+            void handle_write(const asio::error_code &error, std::size_t bytes_transferred) {
                 if (!error) {
                     if (on_success) on_success();
                 }

@@ -14,28 +14,38 @@
 
 namespace dcm  {
     namespace streamsocket {
+        // TODO: only for buffers with .data() method
+
         template<typename socket_type, typename buffer_type = dcm::buffer >
         class listener_session : public dcm::session<buffer_type>,
                                  public std::enable_shared_from_this<dcm::session<buffer_type>> {
         private:
             std::shared_ptr<socket_type>         socket_;
-            dcm::processing_queue<buffer_type> handler_queue_;
+            dcm::processing_queue<buffer_type>   handler_queue_;
 
         protected:
             std::atomic_bool                     eof_;
             std::atomic_bool                     started_;
+            std::atomic_bool                     read_header_;
 
             std::shared_ptr<reader<socket_type>> reader_;
             std::shared_ptr<writer<socket_type>> writer_;
 
-            virtual void read() {
+            virtual void read(int _size=-1) {
                 // Check input buffer
-                this->reader_->read();
+                this->reader_->read(_size);
             }
             virtual void read_success_handler(buffer_type &&_buffer) {
-                handler_queue_.enqueue(std::forward<buffer_type>(_buffer));
+                int size;
+                if (read_header_) {
+                    size = reinterpret_cast<block_descriptor_t*>(_buffer.data())[0];
+                } else {
+                    handler_queue_.enqueue(std::forward<buffer_type>(_buffer));
+                    size = BLOCK_DESCRIPTOR_SIZE;
+                }
+                read_header_=!read_header_;
                 if (!eof_) {
-                    this->reader_->read();
+                    this->reader_->read(size);
                 }
             }
         public:
@@ -79,7 +89,8 @@ namespace dcm  {
 
             // Session operations
             virtual void start() {
-                read();
+                read_header_=true;
+                read(BLOCK_DESCRIPTOR_SIZE);
                 started_ = true;
                 handler_queue_.on_message = this->on_message;
                 handler_queue_.start();
