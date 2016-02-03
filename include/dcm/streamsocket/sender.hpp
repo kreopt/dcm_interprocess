@@ -42,16 +42,17 @@ namespace dcm  {
                 // Event handlers
                 void handle_connect(const asio::error_code &error) {
                     if (!error) {
-                        std::cerr << "DCM endpoint connected" << std::endl;
+                        Log::d("DCM endpoint connected");
                         socket_->set_option(typename socket_type::enable_connection_aborted(true));
                         socket_->set_option(typename socket_type::linger(true, 30));
                         connected_ = true;
-                        connect_promise_.set_value(true);
                         this->reader_->read();
                     } else {
                         //std::cerr << "DCM Client failed to connect: " << error.message() << std::endl;
                         connected_ = false;
                     }
+
+                    connect_promise_.set_value(static_cast<const bool>(connected_));
                 }
 
             public:
@@ -77,7 +78,7 @@ namespace dcm  {
                 }
 
                 ~endpoint_impl() {
-                    std::cout << "destroy endpoint" << std::endl;
+                    Log::d("destroy endpoint");
                     close();
                 }
 
@@ -85,7 +86,9 @@ namespace dcm  {
 
                 virtual std::future<bool> connect() override {
                     if (!stopped_) {
-                        return connect_promise_.get_future();
+                        std::promise<bool> promise;
+                        promise.set_value(true);
+                        return promise.get_future();
                     }
                     stopped_ = false;
 
@@ -104,8 +107,9 @@ namespace dcm  {
                                                                         this->shared_from_this(),
                                                                         std::placeholders::_1));
                             io_service_->run();
-                            connect_promise_.set_value(false);
                             connected_ = false;
+                            connect_promise_ = std::promise<bool>();
+                            auto fut = connect_promise_.get_future();
                             //std::cout << "disconnected" << std::endl;
                             std::this_thread::sleep_for(std::chrono::seconds(1));
                         }
@@ -116,10 +120,10 @@ namespace dcm  {
                 virtual void send(const message<buffer_type> &_buf) const override {
                     // TODO: sender queue. watch connection state (disconnected, connecting, connected)
                     if (connected_) {
-                        std::cout << "try send" << std::endl;
+                        Log::d("try send");
                         this->writer_->write(_buf.data);
                     } else {
-                        std::cout << "failed to send: client disconnected" << std::endl;
+                        Log::d("failed to send: client disconnected");
                     }
                 }
 

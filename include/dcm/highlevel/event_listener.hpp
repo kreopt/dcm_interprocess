@@ -22,10 +22,10 @@ namespace dcm {
         void handle_message(dcm::buffer &&_buf) {
             try {
                 auto task_info = bp::structure::create_from_string<serializer_type>(_buf);
-                auto event = task_info->get("event", "")->as_symbol();
+                auto event = task_info->get("event")->as_symbol();
                 if (event.valid() && listeners_.count(event.hash)) {
                     auto fn = listeners_.at(event.hash);
-                    fn(task_info->get("data", bp::structure::object_t()));
+                    fn(task_info->get("data"));
                 }
             } catch (bp::structure::structure_error &_e) {
                 // log message

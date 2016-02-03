@@ -39,6 +39,7 @@ namespace dcm  {
         template<>
         inline asio::local::stream_protocol::endpoint make_endpoint(const std::string &_ep,
                                                                     asio::io_service &_io_service) {
+
             return asio::local::stream_protocol::endpoint(_ep);
         }
     }

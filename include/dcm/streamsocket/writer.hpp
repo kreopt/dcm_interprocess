@@ -8,6 +8,7 @@
 
 namespace dcm  {
     namespace streamsocket {
+        using namespace std::string_literals;
         // TODO: timeouts
         template<typename socket_type, typename buffer_type = dcm::buffer>
         class writer {
@@ -20,13 +21,16 @@ namespace dcm  {
             }
 
             void write(const buffer_type &_buf) {
-                std::vector<asio::const_buffer> buffers;
                 block_descriptor_t size = _buf.size();
-                buffers.push_back(asio::buffer(&size, BLOCK_DESCRIPTOR_SIZE));
-                buffers.push_back(asio::buffer(_buf.data(), _buf.size()));
+                if (size) {
+                    std::vector<asio::const_buffer> buffers;
+                    buffers.push_back(asio::buffer(reinterpret_cast<char *>(&size), BLOCK_DESCRIPTOR_SIZE));
+                    buffers.push_back(asio::buffer(_buf.data(), _buf.size()));
 
-                asio::async_write(*socket_, buffers,
-                        std::bind(&writer<socket_type>::handle_write, this, std::placeholders::_1, std::placeholders::_2));
+                    asio::async_write(*socket_, buffers,
+                                      std::bind(&writer<socket_type>::handle_write, this, std::placeholders::_1,
+                                                std::placeholders::_2));
+                }
             }
 
             // Event handlers

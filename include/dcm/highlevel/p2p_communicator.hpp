@@ -85,11 +85,11 @@ namespace dcm  {
             listener_->wait_until_stopped();
         }
 
-        void send(const bp::symbol &_evt, bp::structure::ptr &&_data) {
+        void send(const bp::symbol &_evt, bp::structure::ptr &&_data = nullptr) {
             if (sender_) {
                 auto event = bp::structure::create();
                 event->emplace("event"_sym, _evt);
-                event->emplace("data"_sym, *_data);
+                event->emplace("data"_sym, _data);
                 sender_->send(event->stringify<serializer_type>());
             }
         }

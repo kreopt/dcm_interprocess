@@ -39,6 +39,7 @@ namespace dcm  {
                 int size;
                 if (read_header_) {
                     size = reinterpret_cast<block_descriptor_t*>(_buffer.data())[0];
+                    Log::d("reader: got size "s+std::to_string(size));
                 } else {
                     handler_queue_.enqueue(std::forward<buffer_type>(_buffer));
                     size = BLOCK_DESCRIPTOR_SIZE;
@@ -58,9 +59,17 @@ namespace dcm  {
                 reader_ = std::make_shared<reader<socket_type>>(socket_);
                 writer_ = std::make_shared<writer<socket_type>>(socket_);
 
-                this->writer_->on_fail = this->reader_->on_fail = [this](const asio::error_code &error) {
+                this->writer_->on_fail = [this](const asio::error_code &error) {
                     if (error) {
-                        Log::d(error.message());
+                        Log::d("writer: "s + error.message());
+                        eof_ = true;
+                        // TODO: pass error to on_error function
+                        if (on_error) on_error(this->shared_from_this());
+                    }
+                };
+                this->reader_->on_fail = [this](const asio::error_code &error) {
+                    if (error) {
+                        Log::d("reader: "s + error.message());
                         eof_ = true;
                         // TODO: pass error to on_error function
                         if (on_error) on_error(this->shared_from_this());

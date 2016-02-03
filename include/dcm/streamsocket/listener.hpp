@@ -49,7 +49,7 @@ namespace dcm  {
 
             // Event handlers
             void handle_accept(session_ptr session, const asio::error_code &error) {
-                Log::d("client connected");
+                Log::d("client connected to "s+ep_);
                 if (!error) {
                     session->start();
                 }
@@ -82,9 +82,10 @@ namespace dcm  {
                 }
             }
 
-            inline void prepare_endpoint(const std::string &_ep) {
+            inline void prepare_endpoint() {
                 if (std::is_same<protocol_type, asio::local::stream_protocol>()) {
-                    filesystem::remove(_ep);
+                    ep_ = boost::filesystem::absolute(ep_).string();
+                    filesystem::remove(ep_);
                 }
             }
 
@@ -95,8 +96,8 @@ namespace dcm  {
             explicit listener_impl(const std::string &_endpoint) :
                     io_service_(std::make_shared<asio::io_service>()),
                     signals_(*io_service_), ep_(_endpoint) {
-                prepare_endpoint(_endpoint);
-                endpoint_type ep = dcm::streamsocket::make_endpoint<endpoint_type>(_endpoint, *io_service_);
+                prepare_endpoint();
+                endpoint_type ep = dcm::streamsocket::make_endpoint<endpoint_type>(ep_, *io_service_);
                 acceptor_ = std::make_shared<acceptor_type>(*io_service_, ep);
             }
 
@@ -116,6 +117,7 @@ namespace dcm  {
             virtual bool is_running() const { return !io_service_->stopped(); };
             virtual std::string get_endpoint() const override { return ep_; }
             virtual void start() override {
+                Log::d("Starting "s+ep_);
                 server_thread_ = std::thread([this]() {
                     start_accept();
                     io_service_->run();
