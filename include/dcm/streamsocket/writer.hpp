@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <asio.hpp>
+#include <chrono>
 #include "../core/buffer.hpp"
 
 namespace dcm  {
@@ -14,36 +15,36 @@ namespace dcm  {
         class writer {
 
             class buffer_info {
-                char* size;
+                char size[BLOCK_DESCRIPTOR_SIZE];
                 buffer_type buffer;
 
             public:
                 inline std::vector<asio::const_buffer> buffers() {
-                    return {asio::buffer(size, BLOCK_DESCRIPTOR_SIZE), asio::buffer(buffer.data(), buffer.size())};
+                    return {asio::const_buffer(&size, BLOCK_DESCRIPTOR_SIZE), asio::const_buffer(buffer.data(), buffer.size())};
                 };
-                buffer_info(buffer_type &&_buf, size_t _size) : buffer(_buf){
-                    size = new char[BLOCK_DESCRIPTOR_SIZE];
-                    memcpy(size, reinterpret_cast<char*>(&_size), BLOCK_DESCRIPTOR_SIZE);
+                buffer_info() = delete;
+                buffer_info(buffer_type &&_buf, block_descriptor_t _size) : buffer(_buf) {
+                    std::cout << _size << std::endl;
+                    memcpy(&size, reinterpret_cast<char*>(&_size), BLOCK_DESCRIPTOR_SIZE);
                 }
                 ~buffer_info(){
-                    delete [] size;
                 }
             };
 
-            mutable std::deque<buffer_info>              buffer_queue_;
+            std::deque<buffer_info>                      buffer_queue_;
             std::unique_ptr<std::thread>                 queue_thread_;
-            mutable std::condition_variable              queue_cv_;
-            mutable std::condition_variable              writer_cv_;
-            mutable std::mutex                           queue_mutex_;
-            std::atomic_bool                             notified_;
-            std::atomic_bool                             notified_w_;
+            std::condition_variable                      queue_cv_;
+            std::condition_variable                      writer_cv_;
+            std::mutex                                   queue_mutex_;
+            bool                                         notified_;
+            bool                                         notified_w_;
             std::atomic_bool                             stopped_;
             std::atomic_bool                             wait_send_;
 
             // Event handlers
             void handle_write(const asio::error_code &error, std::size_t bytes_transferred) {
                 notified_w_ = true;
-                writer_cv_.notify_one();
+                writer_cv_.notify_all();
 
                 if (!error) {
                     if (on_success) on_success();
@@ -59,10 +60,12 @@ namespace dcm  {
             std::shared_ptr<socket_type> socket_;
 
         public:
-            explicit writer(std::shared_ptr<socket_type> _socket) {
-                socket_ = _socket;
+            explicit writer(std::shared_ptr<socket_type> _socket) : socket_(_socket) {
+                notified_w_ = false;
+                notified_ = false;
                 stopped_ = true;
                 wait_send_ = false;
+                buffer_queue_.clear();
             }
 
             ~writer() {
@@ -75,11 +78,14 @@ namespace dcm  {
                     {
                         std::unique_lock<std::mutex> lck(queue_mutex_);
                         if (!buffer_queue_.size()) {
-                            queue_cv_.wait(lck, [this]() { return static_cast<bool>(notified_); });
+                            queue_cv_.wait(lck, [this]() { return notified_; });
                         }
                         if (stopped_) {
                             return;
                         }
+
+//                        auto t = std::chrono::high_resolution_clock::now();
+
                         notified_=false;
                         asio::async_write(*socket_,
                                           buffer_queue_.front().buffers(),
@@ -88,9 +94,12 @@ namespace dcm  {
                                                     std::placeholders::_1,
                                                     std::placeholders::_2));
 
-                        writer_cv_.wait(lck, [this]() { return static_cast<bool>(notified_w_); });
+                        writer_cv_.wait(lck, [this]() { return notified_w_; });
                         notified_w_=false;
                         buffer_queue_.pop_front();
+
+//                        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-t).count() << "ms"<<std::endl;
+//                        std::cout.flush();
                     }
                 }
                 if (wait_send_) {
@@ -103,7 +112,7 @@ namespace dcm  {
                                                     std::placeholders::_1,
                                                     std::placeholders::_2));
 
-                        writer_cv_.wait(lck, [this]() { return static_cast<bool>(notified_w_); });
+                        writer_cv_.wait(lck, [this]() { return notified_w_; });
                         notified_w_=false;
                         buffer_queue_.pop_front();
                     }
@@ -113,7 +122,10 @@ namespace dcm  {
 
 
             void start() {
+                notified_w_ = false;
+                notified_ = false;
                 stopped_ = false;
+                buffer_queue_.clear();
                 queue_thread_ = std::make_unique<std::thread>(std::bind(&writer<socket_type, buffer_type>::sender_thread_func, this));
             }
 
@@ -123,7 +135,14 @@ namespace dcm  {
                 }
                 stopped_ = true;
                 if (!wait_send) {
+                    notified_ = true;
+                    notified_w_=true;
                     queue_cv_.notify_all();
+                    writer_cv_.notify_all();
+                    if (socket_->is_open()) {
+                        socket_->cancel();
+                    }
+                    buffer_queue_.clear();
                 }
             }
 
@@ -134,10 +153,12 @@ namespace dcm  {
             }
 
             void write(buffer_type &&_buf) {
-                std::lock_guard<std::mutex> lck(queue_mutex_);
-                buffer_queue_.emplace_back(std::forward<buffer_type>(_buf), _buf.size());
-                notified_ = true;
-                queue_cv_.notify_one();
+                if (!stopped_) {
+                    std::lock_guard<std::mutex> lck(queue_mutex_);
+                    buffer_queue_.emplace_back(std::forward<buffer_type>(_buf), static_cast<block_descriptor_t>(_buf.size()));
+                    notified_ = true;
+                    queue_cv_.notify_one();
+                }
             }
 
             std::function<void(const asio::error_code &)> on_fail;

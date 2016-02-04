@@ -12,15 +12,16 @@ int main(){
     auto buf = dcm::buffer(new char[1920*1080*3], 1920*1080*3);
 
     listener->on_message = [](dcm::buffer &&_buf){
-        Log::d("received");
+//        Log::d("received");
     };
 
-    listener->start();
     bool connected = sender->connect().get();
     std::cout << connected << std::endl;
-    for (int i=0; i< 10/*00*/; i++) {
-        sender->send(buf);
+    for (int i=0; i< 100; i++) {
+        sender->send(dcm::buffer(buf));
+
     }
+    listener->start();
 
     sender->close(true);
     listener->stop();

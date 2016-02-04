@@ -38,20 +38,27 @@ namespace dcm  {
                 std::shared_ptr<typename dcm::streamsocket::writer<socket_type, buffer_type>> writer_;
                 std::atomic_bool stopped_;
                 std::atomic_bool connected_;
+                std::atomic_bool was_connected_;
                 std::promise<bool> connect_promise_;
 
                 // Event handlers
                 void handle_connect(const asio::error_code &error) {
                     if (!error) {
                         Log::d("DCM endpoint connected");
+                        was_connected_ = true;
                         socket_->set_option(typename socket_type::enable_connection_aborted(true));
                         socket_->set_option(typename socket_type::linger(true, 30));
                         connected_ = true;
                         this->writer_->start();
+                        if (this->on_connect) {
+                            this->on_connect();
+                        }
                         this->reader_->read();
                     } else {
                         //std::cerr << "DCM Client failed to connect: " << error.message() << std::endl;
                         connected_ = false;
+                        io_service_->stop();
+                        was_connected_ = false;
                     }
 
                     connect_promise_.set_value(static_cast<const bool>(connected_));
@@ -60,6 +67,7 @@ namespace dcm  {
             public:
                 // Constructor
                 explicit endpoint_impl(const std::string &_endpoint) {
+                    was_connected_ = false;
                     stopped_ = true;
                     connected_ = false;
                     io_service_ = std::make_shared<asio::io_service>();
@@ -70,8 +78,9 @@ namespace dcm  {
 
                     this->writer_->on_fail = this->reader_->on_fail = [this](const asio::error_code &error) {
                         if (error) {
-                            std::cerr << error.message() << std::endl;
+                            std::cerr << "writer fail " << error.message() << std::endl;
                         }
+                        connected_ = false;
                         io_service_->stop();
                     };
                 }
@@ -95,11 +104,14 @@ namespace dcm  {
 
                     client_thread_ = std::thread([this]() {
                         while (!stopped_) {
+                            std::cout << "start reconnect" <<std::endl;
                             if (socket_->is_open()) {
                                 socket_->cancel();
                                 socket_->close();
                             }
-                            io_service_->stop();
+                            if (!io_service_->stopped()) {
+                                io_service_->stop();
+                            }
                             io_service_->reset();
 
                             socket_->async_connect(endpoint_, std::bind(&endpoint_impl<protocol_type>::handle_connect,
@@ -107,9 +119,16 @@ namespace dcm  {
                                                                         std::placeholders::_1));
                             io_service_->run();
                             connected_ = false;
+                            std::cout << "disconnecting writer" << std::endl;
+                            this->writer_->stop();
+                            this->writer_->wait_until_stopped();
+                            std::cout << "disconnected" << std::endl;
                             connect_promise_ = std::promise<bool>();
                             auto fut = connect_promise_.get_future();
-                            //std::cout << "disconnected" << std::endl;
+                            if (this->on_disconnect && was_connected_) {
+                                this->on_disconnect();
+                                was_connected_ = false;
+                            }
                             std::this_thread::sleep_for(std::chrono::seconds(1));
                         }
                     });

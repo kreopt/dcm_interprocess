@@ -36,7 +36,8 @@ namespace dcm  {
 
 
         // TODO: on_error function
-        // TODO: on_disconnect function
+        std::function<void(void)> on_disconnect;
+        std::function<void(void)> on_connect;
     };
 
     using default_endpoint = endpoint<>;

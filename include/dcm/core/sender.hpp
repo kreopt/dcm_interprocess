@@ -79,6 +79,8 @@ namespace dcm  {
         void close() {
             sender_queue_.stop();
         };
+
+        std::function<void(typename endpoint<buffer_type>::ptr)> on_disconnect;
     };
 
     template <typename buffer_type = dcm::buffer >
@@ -87,7 +89,10 @@ namespace dcm  {
         typename endpoint<buffer_type>::ptr endpoint_;
     public:
         using ptr = std::shared_ptr<p2p_sender<buffer_type>>;
-        p2p_sender(typename endpoint<buffer_type>::ptr _ep) : endpoint_(_ep) {}
+        p2p_sender(typename endpoint<buffer_type>::ptr _ep) : endpoint_(_ep) {
+            endpoint_->on_disconnect = [this](){if(this->on_disconnect) this->on_disconnect();};
+            endpoint_->on_connect = [this](){if(this->on_connect) this->on_connect();};
+        }
         p2p_sender(const char* _ep) : endpoint_(make_endpoint<buffer_type>(_ep)) {}
 
         std::future<bool> connect() {
@@ -118,6 +123,8 @@ namespace dcm  {
             }
             sender_.close();
         };
+        std::function<void(void)> on_disconnect;
+        std::function<void(void)> on_connect;
     };
 
     template <typename buffer_type = dcm::buffer>
