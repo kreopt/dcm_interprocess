@@ -30,9 +30,9 @@ namespace dcm  {
 
         virtual std::future<bool> connect() = 0;
 
-        virtual void send(const message<buffer_type> &_buf) const = 0;
+        virtual void send(message<buffer_type> &&_buf) const = 0;
 
-        virtual void close() = 0;
+        virtual void close(bool wait_queue=false) = 0;
 
 
         // TODO: on_error function

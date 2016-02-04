@@ -44,12 +44,12 @@ namespace dcm  {
                 // send to ep list
                 for (auto ep: _msg.endpoints) {
                     try {
-                        if (!ep->connected()) {
-                            ep->connect();
-                        }
-                        ep->send(_msg.msg);
+//                        if (!ep->connected()) {
+//                            ep->connect();
+//                        }
+                        ep->send(std::move(_msg.msg));
                     } catch (std::runtime_error &_e) {
-                        Log::w("failed to send");
+                        Log::w("failed to send: "s+_e.what());
                     }
                 }
             };
@@ -88,7 +88,7 @@ namespace dcm  {
     public:
         using ptr = std::shared_ptr<p2p_sender<buffer_type>>;
         p2p_sender(typename endpoint<buffer_type>::ptr _ep) : endpoint_(_ep) {}
-        p2p_sender(const char* _ep) : endpoint_(make_endpoint(_ep)) {}
+        p2p_sender(const char* _ep) : endpoint_(make_endpoint<buffer_type>(_ep)) {}
 
         std::future<bool> connect() {
             if (endpoint_) {
@@ -112,9 +112,9 @@ namespace dcm  {
                 throw sender_error("endpoint is not configured");
             }
         };
-        void close() {
+        void close(bool wait_queue = false) {
             if (endpoint_) {
-                endpoint_->close();
+                endpoint_->close(wait_queue);
             }
             sender_.close();
         };
@@ -129,7 +129,7 @@ namespace dcm  {
         }
         std::string p2p_endpoint = std::string(info.first).append("://").append(info.second);
 
-        auto endpoint = make_endpoint(p2p_endpoint);
+        auto endpoint = make_endpoint<buffer_type>(p2p_endpoint);
 
         return std::make_shared<p2p_sender<buffer_type>>(endpoint);
     }

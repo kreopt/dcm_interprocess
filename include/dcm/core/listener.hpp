@@ -19,7 +19,7 @@ namespace dcm  {
 
         virtual ~session() {};
 
-        virtual void send(const buffer_type &_buf) = 0;
+        virtual void send(buffer_type &&_buf) = 0;
         virtual void start() = 0;
     };
 

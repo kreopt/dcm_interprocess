@@ -39,7 +39,6 @@ namespace dcm  {
                 int size;
                 if (read_header_) {
                     size = reinterpret_cast<block_descriptor_t*>(_buffer.data())[0];
-                    Log::d("reader: got size "s+std::to_string(size));
                 } else {
                     handler_queue_.enqueue(std::forward<buffer_type>(_buffer));
                     size = BLOCK_DESCRIPTOR_SIZE;
@@ -89,10 +88,10 @@ namespace dcm  {
                 Log::d("destroy session");
             }
 
-            virtual void send(const buffer_type &_buf) override {
+            virtual void send(buffer_type &&_buf) override {
                 // TODO: only after start
                 if (started_) {
-                    this->writer_->write(_buf);
+                    this->writer_->write(std::forward<buffer_type>(_buf));
                 }
             }
 

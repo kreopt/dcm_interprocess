@@ -50,7 +50,7 @@ namespace dcm  {
                     return promise.get_future();
                 };
 
-                virtual void send(const message <buffer_type> &_buf) const override {
+                virtual void send(message <buffer_type> &&_buf) const override {
                     if (!mq_) {
                         connected_ = false;
                         Log::d("message queue destroyed. reconnect");
@@ -83,8 +83,9 @@ namespace dcm  {
                     }
                 };
 
-                virtual void close() {
+                virtual void close(bool wait_queue=false) {
                     if (mq_) {
+                        // TODO: wait queue
                         connected_ = false;
                         mq_.reset();
                     }

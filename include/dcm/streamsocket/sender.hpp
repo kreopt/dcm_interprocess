@@ -7,6 +7,7 @@
 #include <error.h>
 #include <mutex>
 #include <iostream>
+#include <condition_variable>
 
 #include "../core/buffer.hpp"
 #include "../core/endpoint.hpp"
@@ -18,7 +19,7 @@ using asio::ip::tcp;
 
 namespace dcm  {
     namespace streamsocket {
-
+        const size_t QUEUE_SIZE = 1024*1024*1024;       // TODO: make it configurable
         namespace {
             template<typename protocol_type, typename buffer_type = dcm::buffer>
             class endpoint_impl : public endpoint<buffer_type>,
@@ -33,8 +34,8 @@ namespace dcm  {
                 std::shared_ptr<socket_type> socket_;
                 typename protocol_type::endpoint endpoint_;
                 std::thread client_thread_;
-                std::shared_ptr<streamsocket::reader<socket_type, buffer_type>> reader_;
-                std::shared_ptr<streamsocket::writer<socket_type, buffer_type>> writer_;
+                std::shared_ptr<typename dcm::streamsocket::reader<socket_type, buffer_type>> reader_;
+                std::shared_ptr<typename dcm::streamsocket::writer<socket_type, buffer_type>> writer_;
                 std::atomic_bool stopped_;
                 std::atomic_bool connected_;
                 std::promise<bool> connect_promise_;
@@ -46,6 +47,7 @@ namespace dcm  {
                         socket_->set_option(typename socket_type::enable_connection_aborted(true));
                         socket_->set_option(typename socket_type::linger(true, 30));
                         connected_ = true;
+                        this->writer_->start();
                         this->reader_->read();
                     } else {
                         //std::cerr << "DCM Client failed to connect: " << error.message() << std::endl;
@@ -66,14 +68,11 @@ namespace dcm  {
                     reader_ = std::make_shared<reader<socket_type>>(socket_);
                     writer_ = std::make_shared<writer<socket_type>>(socket_);
 
-
                     this->writer_->on_fail = this->reader_->on_fail = [this](const asio::error_code &error) {
                         if (error) {
                             std::cerr << error.message() << std::endl;
                         }
                         io_service_->stop();
-                    };;
-                    this->writer_->on_success = [this]() {
                     };
                 }
 
@@ -117,28 +116,32 @@ namespace dcm  {
                     return connect_promise_.get_future();
                 }
 
-                virtual void send(const message<buffer_type> &_buf) const override {
+                virtual void send(message<buffer_type> &&_buf) const override {
                     // TODO: sender queue. watch connection state (disconnected, connecting, connected)
                     if (connected_) {
-                        Log::d("try send");
-                        this->writer_->write(_buf.data);
+                        this->writer_->write(std::move(_buf.data));
                     } else {
                         Log::d("failed to send: client disconnected");
                     }
                 }
 
-                virtual void close() override {
-                    std::cerr << "close endpoint" << std::endl;
-                    // TODO: wait pending operations if necessary
-                    stopped_ = true;
-                    if (socket_->is_open()) {
-                        socket_->close();
-                    }
-                    if (!io_service_->stopped()) {
-                        io_service_->stop();
-                    }
-                    if (client_thread_.joinable()) {
-                        client_thread_.join();
+                virtual void close(bool wait_queue=false) override {
+                    if (!stopped_) {
+                        std::cerr << "close endpoint" << std::endl;
+
+                        this->writer_->stop(wait_queue);
+                        this->writer_->wait_until_stopped();
+
+                        stopped_ = true;
+                        if (socket_->is_open()) {
+                            socket_->close();
+                        }
+                        if (!io_service_->stopped()) {
+                            io_service_->stop();
+                        }
+                        if (client_thread_.joinable()) {
+                            client_thread_.join();
+                        }
                     }
                 }
             };

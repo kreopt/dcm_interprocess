@@ -107,13 +107,6 @@ namespace dcm  {
                 wait_until_stopped();
             }
 
-            [[deprecated]]
-            virtual void broadcast(const dcm::buffer &_buf) {
-                for (auto &session: sessions_) {
-                    session->send(_buf);
-                }
-            }
-
             virtual bool is_running() const { return !io_service_->stopped(); };
             virtual std::string get_endpoint() const override { return ep_; }
             virtual void start() override {

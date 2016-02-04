@@ -6,8 +6,8 @@ using bp::Log;
 int main(){
     using namespace std::chrono_literals;
 
-    auto listener = dcm::make_listener<>("ipc://test.sock");
-    auto sender = dcm::make_p2p_sender<>("ipc://test.sock");
+    auto listener = dcm::make_listener<>("p2pipc://test.sock");
+    auto sender = dcm::make_p2p_sender<>("p2pipc://test.sock");
 
     auto buf = dcm::buffer(new char[1920*1080*3], 1920*1080*3);
 
@@ -16,11 +16,13 @@ int main(){
     };
 
     listener->start();
-    sender->connect();
-    for (int i=0; i< 10/*000*/; i++) {
+    bool connected = sender->connect().get();
+    std::cout << connected << std::endl;
+    for (int i=0; i< 10/*00*/; i++) {
         sender->send(buf);
     }
-    sender->close();
+
+    sender->close(true);
     listener->stop();
     listener->wait_until_stopped();
     return 0;
