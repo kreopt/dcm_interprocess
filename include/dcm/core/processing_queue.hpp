@@ -22,6 +22,7 @@ namespace dcm  {
         std::deque<item_type>                queue_;
         std::condition_variable              queue_cv_;
         std::mutex                           queue_mutex_;
+        std::mutex                           stop_mutex_;
         std::atomic_bool                     stopped_;
         bool                                 notified_;
         size_t                               max_size_;
@@ -69,6 +70,7 @@ namespace dcm  {
             queue_cv_.notify_all();
         }
         void wait_until_stopped() {
+            std::lock_guard<std::mutex> lck(stop_mutex_);
             if (handler_thread_ && handler_thread_->joinable()) {
                 handler_thread_->join();
             }

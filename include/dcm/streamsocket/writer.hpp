@@ -27,7 +27,7 @@ namespace dcm  {
                     return {asio::const_buffer(&size, BLOCK_DESCRIPTOR_SIZE), asio::const_buffer(buffer.data(), buffer.size())};
                 };
                 buffer_info() = delete;
-                buffer_info(buffer_type &&_buf, block_descriptor_t _size) : buffer(_buf) {
+                buffer_info(buffer_type &&_buf, block_descriptor_t _size) : buffer(std::forward<buffer_type>(_buf)) {
                     memcpy(&size, reinterpret_cast<char*>(&_size), BLOCK_DESCRIPTOR_SIZE);
                 }
                 ~buffer_info(){
@@ -39,6 +39,7 @@ namespace dcm  {
             std::condition_variable                      queue_cv_;
             std::condition_variable                      writer_cv_;
             std::mutex                                   queue_mutex_;
+            std::mutex                                   stop_mutex_;
             bool                                         notified_;
             bool                                         notified_w_;
             std::atomic_bool                             stopped_;
@@ -68,7 +69,6 @@ namespace dcm  {
                 notified_ = false;
                 stopped_ = true;
                 wait_send_ = false;
-                buffer_queue_.clear();
             }
 
             ~writer() {
@@ -130,6 +130,7 @@ namespace dcm  {
 
 
             void start() {
+                std::lock_guard<std::mutex> lck(queue_mutex_);
                 notified_w_ = false;
                 notified_ = false;
                 stopped_ = false;
@@ -138,9 +139,11 @@ namespace dcm  {
             }
 
             void stop(bool wait_send = false) {
-                if (wait_send) {
-                    wait_send_ = true;
-                }
+                if (stopped_)
+                    return;
+                std::lock_guard<std::mutex> lck(queue_mutex_);
+                wait_send_ = wait_send;
+
                 stopped_ = true;
                 if (!wait_send) {
                     if (socket_ && socket_->is_open()) {
@@ -148,13 +151,15 @@ namespace dcm  {
                     }
                     notified_ = true;
                     notified_w_=true;
+                    buffer_queue_.clear();
                     queue_cv_.notify_all();
                     writer_cv_.notify_all();
-                    buffer_queue_.clear();
                 }
             }
 
             void wait_until_stopped() {
+                // avoid exception if other thread call this func
+                std::lock_guard<std::mutex> lck(stop_mutex_);
                 if (queue_thread_ && queue_thread_->joinable()) {
                     queue_thread_->join();
                 }

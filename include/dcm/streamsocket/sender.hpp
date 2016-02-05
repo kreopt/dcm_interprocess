@@ -148,7 +148,6 @@ namespace dcm  {
                 virtual void close(bool wait_queue=false) override {
                     if (!stopped_) {
                         Log::d("close endpoint");
-
                         this->writer_->stop(wait_queue);
                         this->writer_->wait_until_stopped();
 

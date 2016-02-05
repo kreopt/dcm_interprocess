@@ -26,7 +26,7 @@ int main(){
     }
     listener->start();
 
-    sender->close(true);
+    sender->close();
     listener->stop();
     listener->wait_until_stopped();
     return 0;

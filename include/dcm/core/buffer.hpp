@@ -20,7 +20,7 @@ namespace dcm  {
         inline char *data() { return data_; }
 
         virtual ~buffer() {
-            if (!wrapped_) {
+            if (!wrapped_ && data_) {
                 delete[] data_;
             }
         }
