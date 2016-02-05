@@ -67,11 +67,10 @@ namespace dcm  {
 
             public:
                 // Constructor
-                explicit endpoint_impl(const std::string &_endpoint) {
+                explicit endpoint_impl(const std::string &_endpoint) : io_service_(std::make_shared<asio::io_service>()){
                     was_connected_ = false;
                     stopped_ = true;
                     connected_ = false;
-                    io_service_ = std::make_shared<asio::io_service>();
                     endpoint_ = dcm::streamsocket::make_endpoint<endpoint_type>(_endpoint, *io_service_);
                     socket_ = std::make_shared<socket<socket_type>>(io_service_);
                     reader_ = std::make_shared<reader<socket_type>>(socket_);

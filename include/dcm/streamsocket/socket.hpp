@@ -13,9 +13,9 @@ namespace dcm {
             std::shared_ptr<socket_type>        socket_;
             std::mutex                          socket_mutex_;
         public:
-            socket(std::shared_ptr<asio::io_service> _io_service) : socket_(std::make_shared<socket_type>(*_io_service)) {}
+            explicit socket(std::shared_ptr<asio::io_service> _io_service) : socket_(std::make_shared<socket_type>(*_io_service)) {}
 
-            inline std::shared_ptr<socket_type> get_socket() {return socket_;};
+            inline std::shared_ptr<socket_type> get_socket() const {return socket_;};
             void close(bool cancel=true){
                 if (socket_->is_open()) {
                     std::lock_guard<std::mutex> lck(socket_mutex_);

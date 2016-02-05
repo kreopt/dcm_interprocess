@@ -43,7 +43,7 @@ namespace dcm  {
             data_ = nullptr;
         }
 
-        buffer(const char *_data) {
+        explicit buffer(const char *_data) {
             size_ = sizeof(_data);
             data_ = new char[size_];
             memcpy(data_, _data, size_);
@@ -60,14 +60,14 @@ namespace dcm  {
             }
         }
 
-        buffer(bool _val) {
+        explicit buffer(bool _val) {
             size_ = 1;
             data_ = new char[1]{static_cast<char>(_val ? 1 : 0)};
 //            data_[0] = _val ? 1 : 0;
         }
 
         template<typename T, typename = typename std::enable_if<std::is_arithmetic<T>::value>::type>
-        buffer(T _val) {
+        explicit buffer(T _val) {
             size_ = sizeof(T);
             data_ = new char[size_];
             memcpy(const_cast<char *>(data_), reinterpret_cast<char *>(_val), size_);
@@ -85,6 +85,8 @@ namespace dcm  {
         }
 
         buffer& operator=(const buffer& _buf) {
+            if (&_buf==this)
+                return *this;
             size_ = _buf.size_;
             if (data_) {
                 delete [] data_;
@@ -95,6 +97,8 @@ namespace dcm  {
         }
 
         buffer& operator=(buffer&& _buf) {
+            if (&_buf==this)
+                return *this;
             size_ = _buf.size_;
             if (data_) {
                 delete [] data_;
@@ -105,7 +109,7 @@ namespace dcm  {
             return *this;
         }
 
-        inline operator std::string() {
+        inline operator std::string() const {
             return std::string(data_, size_);
         }
 

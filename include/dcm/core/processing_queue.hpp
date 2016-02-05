@@ -56,9 +56,9 @@ namespace dcm  {
         msg_handler_t<item_type>             on_message;
 
         processing_queue() = delete;
-        processing_queue(size_t _queue_size): max_size_(_queue_size), current_size_(0) {
+        explicit processing_queue(size_t _queue_size): max_size_(_queue_size), current_size_(0), notified_(false) {
         }
-        ~processing_queue() {
+        virtual ~processing_queue() {
             stop();
             wait_until_stopped();
         }

@@ -11,7 +11,7 @@ namespace dcm  {
     class exception : public std::exception {
         std::string reason_;
     public:
-        exception(const char* _reason): std::exception(), reason_(_reason) {}
+        explicit exception(const char* _reason): std::exception(), reason_(_reason) {}
 
         virtual const char* what() const noexcept override {
             return reason_.c_str();

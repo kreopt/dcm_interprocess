@@ -13,7 +13,7 @@ namespace dcm  {
 
     class sender_error : public dcm::exception {
     public:
-        sender_error(const char* _reason): dcm::exception(_reason) {}
+        explicit sender_error(const char* _reason): dcm::exception(_reason) {}
     };
 
     const size_t QUEUE_SIZE = 1024*1024*1024;       // TODO: make it configurable
@@ -89,11 +89,11 @@ namespace dcm  {
         typename endpoint<buffer_type>::ptr endpoint_;
     public:
         using ptr = std::shared_ptr<p2p_sender<buffer_type>>;
-        p2p_sender(typename endpoint<buffer_type>::ptr _ep) : endpoint_(_ep) {
+        explicit p2p_sender(typename endpoint<buffer_type>::ptr _ep) : endpoint_(_ep) {
             endpoint_->on_disconnect = [this](){if(this->on_disconnect) this->on_disconnect();};
             endpoint_->on_connect = [this](){if(this->on_connect) this->on_connect();};
         }
-        p2p_sender(const char* _ep) : endpoint_(make_endpoint<buffer_type>(_ep)) {}
+        explicit p2p_sender(const char* _ep) : endpoint_(make_endpoint<buffer_type>(_ep)) {}
 
         std::future<bool> connect() {
             if (endpoint_) {
