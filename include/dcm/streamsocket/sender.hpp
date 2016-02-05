@@ -14,6 +14,7 @@
 #include "asio_endpoint.hpp"
 #include "reader.hpp"
 #include "writer.hpp"
+#include "socket.hpp"
 
 using asio::ip::tcp;
 
@@ -30,8 +31,8 @@ namespace dcm  {
                 using socket_type = typename protocol_type::socket;
                 using endpoint_type = typename protocol_type::endpoint;
 
-                std::shared_ptr<asio::io_service> io_service_;
-                std::shared_ptr<socket_type> socket_;
+                std::shared_ptr<asio::io_service>   io_service_;
+                std::shared_ptr<socket<socket_type>>        socket_;    // TODO: use lockable socket
                 typename protocol_type::endpoint endpoint_;
                 std::thread client_thread_;
                 std::shared_ptr<typename dcm::streamsocket::reader<socket_type, buffer_type>> reader_;
@@ -46,8 +47,8 @@ namespace dcm  {
                     if (!error) {
                         Log::d("DCM endpoint connected");
                         was_connected_ = true;
-                        socket_->set_option(typename socket_type::enable_connection_aborted(true));
-                        socket_->set_option(typename socket_type::linger(true, 30));
+                        socket_->get_socket()->set_option(typename socket_type::enable_connection_aborted(true));
+                        socket_->get_socket()->set_option(typename socket_type::linger(true, 30));
                         connected_ = true;
                         this->writer_->start();
                         if (this->on_connect) {
@@ -72,13 +73,13 @@ namespace dcm  {
                     connected_ = false;
                     io_service_ = std::make_shared<asio::io_service>();
                     endpoint_ = dcm::streamsocket::make_endpoint<endpoint_type>(_endpoint, *io_service_);
-                    socket_ = std::make_shared<socket_type>(*io_service_);
+                    socket_ = std::make_shared<socket<socket_type>>(io_service_);
                     reader_ = std::make_shared<reader<socket_type>>(socket_);
                     writer_ = std::make_shared<writer<socket_type>>(socket_);
 
                     this->writer_->on_fail = this->reader_->on_fail = [this](const asio::error_code &error) {
                         if (error) {
-                            std::cerr << "writer fail " << error.message() << std::endl;
+                            Log::e("writer fail "s + error.message());
                         }
                         connected_ = false;
                         io_service_->stop();
@@ -104,9 +105,7 @@ namespace dcm  {
 
                     client_thread_ = std::thread([this]() {
                         while (!stopped_) {
-                            std::cout << "start reconnect" <<std::endl;
                             if (socket_->is_open()) {
-                                socket_->cancel();
                                 socket_->close();
                             }
                             if (!io_service_->stopped()) {
@@ -114,22 +113,25 @@ namespace dcm  {
                             }
                             io_service_->reset();
 
-                            socket_->async_connect(endpoint_, std::bind(&endpoint_impl<protocol_type>::handle_connect,
+                            socket_->get_socket()->async_connect(endpoint_, std::bind(&endpoint_impl<protocol_type>::handle_connect,
                                                                         this->shared_from_this(),
                                                                         std::placeholders::_1));
                             io_service_->run();
                             connected_ = false;
-                            std::cout << "disconnecting writer" << std::endl;
                             this->writer_->stop();
                             this->writer_->wait_until_stopped();
-                            std::cout << "disconnected" << std::endl;
                             connect_promise_ = std::promise<bool>();
                             auto fut = connect_promise_.get_future();
+                            if (was_connected_) {
+                                Log::d("disconnected");
+                            }
                             if (this->on_disconnect && was_connected_) {
                                 this->on_disconnect();
                                 was_connected_ = false;
                             }
-                            std::this_thread::sleep_for(std::chrono::seconds(1));
+                            if (!stopped_) {
+                                std::this_thread::sleep_for(std::chrono::seconds(1));
+                            }
                         }
                     });
                     return connect_promise_.get_future();
@@ -140,13 +142,13 @@ namespace dcm  {
                     if (connected_) {
                         this->writer_->write(std::move(_buf.data));
                     } else {
-                        Log::d("failed to send: client disconnected");
+                        Log::e("failed to send: client disconnected");
                     }
                 }
 
                 virtual void close(bool wait_queue=false) override {
                     if (!stopped_) {
-                        std::cerr << "close endpoint" << std::endl;
+                        Log::d("close endpoint");
 
                         this->writer_->stop(wait_queue);
                         this->writer_->wait_until_stopped();

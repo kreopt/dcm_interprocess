@@ -15,9 +15,12 @@ int main(){
 //        Log::d("received");
     };
 
+    sender->on_connect=[](){
+        Log::d("connected");
+    };
     bool connected = sender->connect().get();
     std::cout << connected << std::endl;
-    for (int i=0; i< 100; i++) {
+    for (int i=0; i< 10; i++) {
         sender->send(dcm::buffer(buf));
 
     }

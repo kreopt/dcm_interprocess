@@ -18,6 +18,7 @@ namespace dcm  {
     private:
         bool sender_stopped_;
         bool listener_stopped_;
+        bool external_listener_;
 
         typename p2p_sender<>::ptr  sender_;
         typename listener<>::ptr    listener_;
@@ -33,7 +34,7 @@ namespace dcm  {
             send("p2p.greeting"_sym, std::move(structure));
         }
     public:
-        p2p() : sender_stopped_(true), listener_stopped_(true) {}
+        p2p() : sender_stopped_(true), listener_stopped_(true), external_listener_(false) {}
 
         ~p2p() {
             disconnect();
@@ -49,11 +50,14 @@ namespace dcm  {
             }
         }
         void disconnect() {
-            sender_->close();
+            if (sender_) {
+                sender_->close();
+            }
             sender_.reset();
         }
 
         void start(const std::string &_endpoint) {
+            external_listener_ = false;
             listener_ep_ = _endpoint;
             listener_ = make_listener(_endpoint);
             listener_->on_message = std::bind(&p2p<serializer_type>::handle_message, this, std::placeholders::_1);
@@ -65,6 +69,7 @@ namespace dcm  {
 
         void start(const dcm::listener<dcm::buffer>::ptr _listener) {
             listener_ep_ = _listener->get_endpoint();
+            external_listener_ = true;
             listener_ = _listener;
             if (!listener_->is_running()) {
                 listener_->start();
@@ -79,10 +84,14 @@ namespace dcm  {
                 send("listener.stop"_sym, bp::structure::create());
             }
             listener_ep_="";
-            listener_->stop();
+            if (external_listener_ && listener_) {
+                listener_->stop();
+            }
         }
         void wait_until_stopped() {
-            listener_->wait_until_stopped();
+            if (listener_) {
+                listener_->wait_until_stopped();
+            }
         }
 
         void send(const bp::symbol &_evt, bp::structure::ptr &&_data = nullptr) {

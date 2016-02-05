@@ -70,7 +70,7 @@ namespace dcm  {
                     sessions_.insert(new_session);
                 }
                 prepare_accept(acceptor_);
-                acceptor_->async_accept(*new_session->socket(),
+                acceptor_->async_accept(*new_session->socket()->get_socket(),
                                         std::bind(
                                                 &listener_impl<protocol_type, buffer_type, session_type_tpl>::handle_accept,
                                                 this, new_session, std::placeholders::_1));

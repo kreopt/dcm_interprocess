@@ -3,9 +3,13 @@
 
 #include <functional>
 #include <memory>
+#include <thread>
+#include <condition_variable>
+#include <deque>
 #include <asio.hpp>
 #include <chrono>
 #include "../core/buffer.hpp"
+#include "socket.hpp"
 
 namespace dcm  {
     namespace streamsocket {
@@ -24,7 +28,6 @@ namespace dcm  {
                 };
                 buffer_info() = delete;
                 buffer_info(buffer_type &&_buf, block_descriptor_t _size) : buffer(_buf) {
-                    std::cout << _size << std::endl;
                     memcpy(&size, reinterpret_cast<char*>(&_size), BLOCK_DESCRIPTOR_SIZE);
                 }
                 ~buffer_info(){
@@ -57,10 +60,10 @@ namespace dcm  {
 
 
         protected:
-            std::shared_ptr<socket_type> socket_;
+            std::shared_ptr<socket<socket_type>> socket_;
 
         public:
-            explicit writer(std::shared_ptr<socket_type> _socket) : socket_(_socket) {
+            explicit writer(std::shared_ptr<socket<socket_type>> _socket) : socket_(_socket) {
                 notified_w_ = false;
                 notified_ = false;
                 stopped_ = true;
@@ -84,41 +87,46 @@ namespace dcm  {
                             return;
                         }
 
-//                        auto t = std::chrono::high_resolution_clock::now();
-
                         notified_=false;
-                        asio::async_write(*socket_,
-                                          buffer_queue_.front().buffers(),
-                                          std::bind(&writer<socket_type, buffer_type>::handle_write,
-                                                    this,
-                                                    std::placeholders::_1,
-                                                    std::placeholders::_2));
+                        if (socket_ && socket_->is_open()) {
+                            asio::async_write(*socket_->get_socket(),
+                                              buffer_queue_.front().buffers(),
+                                              std::bind(&writer<socket_type, buffer_type>::handle_write,
+                                                        this,
+                                                        std::placeholders::_1,
+                                                        std::placeholders::_2));
 
-                        writer_cv_.wait(lck, [this]() { return notified_w_; });
-                        notified_w_=false;
-                        buffer_queue_.pop_front();
+                            writer_cv_.wait(lck, [this]() { return notified_w_; });
+                            notified_w_ = false;
+                            if (buffer_queue_.size()) {
+                                buffer_queue_.pop_front();
+                            }
+                        }
 
-//                        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now()-t).count() << "ms"<<std::endl;
-//                        std::cout.flush();
                     }
                 }
                 if (wait_send_) {
                     std::unique_lock<std::mutex> lck(queue_mutex_);
                     while (buffer_queue_.size()) {
-                        asio::async_write(*socket_,
-                                          buffer_queue_.front().buffers(),
-                                          std::bind(&writer<socket_type, buffer_type>::handle_write,
-                                                    this,
-                                                    std::placeholders::_1,
-                                                    std::placeholders::_2));
+                        if (socket_ && socket_->is_open()) {
+                            asio::async_write(*socket_->get_socket(),
+                                              buffer_queue_.front().buffers(),
+                                              std::bind(&writer<socket_type, buffer_type>::handle_write,
+                                                        this,
+                                                        std::placeholders::_1,
+                                                        std::placeholders::_2));
 
-                        writer_cv_.wait(lck, [this]() { return notified_w_; });
-                        notified_w_=false;
-                        buffer_queue_.pop_front();
+                            writer_cv_.wait(lck, [this]() { return notified_w_; });
+                            notified_w_ = false;
+                            if (buffer_queue_.size()) {
+                                buffer_queue_.pop_front();
+                            }
+                        } else {
+                            buffer_queue_.clear();
+                        }
                     }
                 }
             }
-
 
 
             void start() {
@@ -135,13 +143,13 @@ namespace dcm  {
                 }
                 stopped_ = true;
                 if (!wait_send) {
+                    if (socket_ && socket_->is_open()) {
+                        socket_->close();
+                    }
                     notified_ = true;
                     notified_w_=true;
                     queue_cv_.notify_all();
                     writer_cv_.notify_all();
-                    if (socket_->is_open()) {
-                        socket_->cancel();
-                    }
                     buffer_queue_.clear();
                 }
             }

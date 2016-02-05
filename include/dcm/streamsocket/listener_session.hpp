@@ -11,6 +11,7 @@
 #include "../core/processing_queue.hpp"
 #include "reader.hpp"
 #include "writer.hpp"
+#include "socket.hpp"
 
 namespace dcm  {
     namespace streamsocket {
@@ -20,7 +21,7 @@ namespace dcm  {
         class listener_session : public dcm::session<buffer_type>,
                                  public std::enable_shared_from_this<dcm::session<buffer_type>> {
         private:
-            std::shared_ptr<socket_type>         socket_;
+            std::shared_ptr<streamsocket::socket<socket_type>>         socket_;
             dcm::processing_queue<buffer_type>   handler_queue_;
 
         protected:
@@ -52,7 +53,7 @@ namespace dcm  {
 
             // Constructor
             explicit listener_session(std::shared_ptr<asio::io_service> io_service)
-                    : handler_queue_(1024*1024*1024), socket_(std::make_shared<socket_type>(*io_service)) {
+                    : handler_queue_(1024*1024*1024), socket_(std::make_shared<streamsocket::socket<socket_type>>(io_service)) {
 
                 started_ = false;
                 reader_ = std::make_shared<reader<socket_type>>(socket_);
@@ -106,7 +107,7 @@ namespace dcm  {
             }
 
             // Overloads
-            inline std::shared_ptr<socket_type> socket() const {
+            inline std::shared_ptr<streamsocket::socket<socket_type>> socket() const {
                 return socket_;
             }
 
