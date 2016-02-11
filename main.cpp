@@ -7,19 +7,18 @@ int main(){
     using namespace std::chrono_literals;
 
     auto listener = dcm::make_listener<>("p2pipc://test.sock");
-    auto sender = dcm::make_p2p_sender<>("p2pipc://test.sock");
+    auto sender = dcm::make_sender<>("p2pipc://test.sock");
 
     auto buf = dcm::buffer(new char[1920*1080*3], 1920*1080*3);
 
-    listener->on_message = [](dcm::buffer &&_buf){
+    listener->on_message.set_default([](const typename dcm::session<dcm::buffer>::ptr &_sess, dcm::buffer &&_buf){
         Log::d("received");
-    };
+    });
 
-    sender->on_connect=[](){
+    sender->on_connect.set_default([](){
         Log::d("connected");
-    };
-    bool connected = sender->connect().get();
-    std::cout << connected << std::endl;
+    });
+    sender->connect();
     for (int i=0; i< 10; i++) {
         sender->send(dcm::buffer(buf));
 

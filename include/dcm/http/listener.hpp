@@ -33,8 +33,8 @@ namespace dcm  {
                 explicit listener_impl(const std::string &_ep) {
                 }
 
-                virtual bool is_running() const { return !stopped_; };
-                virtual std::string get_endpoint() const override { return ep_; }
+                virtual bool is_running() const { return false; };
+                virtual std::string get_endpoint() const override { return ""; }
 
                 virtual void start() override {
                 };

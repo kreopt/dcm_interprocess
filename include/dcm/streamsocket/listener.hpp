@@ -59,12 +59,15 @@ namespace dcm  {
             // Initiates an asynchronous accept operation to wait for a new connection
             void start_accept() {
                 auto new_session = std::make_shared<session_type>(io_service_);
-                new_session->on_message = this->on_message;
-                new_session->on_error = [this](typename session<buffer_type>::ptr _session) {
+                new_session->on_message.set_default([this](const typename session<buffer_type>::ptr &_sess, buffer_type&& _buf){
+                    this->on_message.call(_sess, std::forward<buffer_type>(_buf));
+                });
+                new_session->on_error.set_default([this](const typename session<buffer_type>::ptr _session, const std::error_code &_ec) {
+                    Log::e(_ec.message());
                     std::lock_guard<std::mutex> lck(session_mutex_);
                     sessions_.erase(_session);
-                };
-                new_session->on_connect = this->on_connect;
+                });
+                new_session->on_connect.set_default([this](const typename session<buffer_type>::ptr &_sess){this->on_connect.call(_sess);});
                 {
                     std::lock_guard<std::mutex> lck(session_mutex_);
                     sessions_.insert(new_session);

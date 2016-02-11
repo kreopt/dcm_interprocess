@@ -86,7 +86,7 @@ namespace dcm  {
                 if (current_size_+buf_size < max_size_) {
                     std::unique_lock<std::mutex> lck(queue_mutex_);
                     current_size_ += buf_size;
-                    queue_.emplace_back(std::move(_buf));
+                    queue_.emplace_back(std::forward<item_type>(_buf));
                     notified_ = true;
                     queue_cv_.notify_one();
                 } else {

@@ -9,7 +9,7 @@
 namespace dcm  {
 
     template <typename buffer_type = dcm::buffer>
-    inline typename endpoint<buffer_type>::ptr make_endpoint(const std::string &_ep) {
+    inline typename sender<buffer_type>::ptr make_sender(const std::string &_ep) {
         // TODO: remove unix type
         auto info = parse_endpoint(_ep);
         switch (protocol(bp::symbol(info.first).hash)) {

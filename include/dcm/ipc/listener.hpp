@@ -82,16 +82,15 @@ namespace dcm  {
                                 shared_memory_object::remove(uuid.c_str());
 
                                 Log::d(std::string("receiver count:") + std::to_string(recv_cnt));
-                                if (this->on_message) {
+                                if (!this->on_message.empty()) {
                                     handler_queue_.enqueue(std::move(buf));
                                 }
                             }
                         }
                     });
                     handler_queue_.on_message = [this](buffer_type &&_buf) {
-                        if (this->on_message) {
-                            this->on_message(std::forward<buffer_type>(_buf));
-                        }
+                        // TODO: ipc session
+                        this->on_message.call(nullptr, std::forward<buffer_type>(_buf));
                     };
                     handler_queue_.start();
                 };

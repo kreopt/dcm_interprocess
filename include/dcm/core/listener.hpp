@@ -9,12 +9,25 @@
 #include <atomic>
 #include <binelpro/log.hpp>
 #include "buffer.hpp"
+#include "handler.hpp"
 
 namespace dcm  {
     using bp::Log;
 
+    template <typename buffer_type>
+    class session;
+
+    namespace {
+        template <typename buffer_type>
+        using session_handler_t = std::function<void(const typename session<buffer_type>::ptr&)>;
+        template <typename buffer_type>
+        using session_error_handler_t = std::function<void(const typename session<buffer_type>::ptr&, const std::error_code&)>;
+        template <typename buffer_type>
+        using session_msg_handler_t = std::function<void(const typename session<buffer_type>::ptr&, buffer_type &&)>;
+    }
+
     template <typename buffer_type = dcm::buffer >
-    class session {
+    class session : public std::enable_shared_from_this<session<buffer_type>> {
     public:
         using ptr = typename std::shared_ptr<session<buffer_type>>;
 
@@ -22,21 +35,16 @@ namespace dcm  {
 
         virtual void send(buffer_type &&_buf) = 0;
         virtual void start() = 0;
+        virtual void stop() = 0;
+
+        handler<session_handler_t<buffer_type>>     on_connect;
+        handler<session_error_handler_t<buffer_type>>     on_error;
+        handler<session_msg_handler_t<buffer_type>> on_message;
     };
 
     template <typename buffer_type = dcm::buffer >
-    using connect_handler_t = std::function<void(typename session<buffer_type>::ptr)>;
-
-
-    template <typename buffer_type = dcm::buffer >
-    class listener {
-        std::unordered_map<bp::symbol, msg_handler_t<buffer_type>> message_handlers_;
-
-        void handle_message(buffer_type && _buf) {
-            auto data = event_matcher(_buf);
-        }
+    class listener : public std::enable_shared_from_this<listener<buffer_type>>{
     public:
-        typedef typename std::remove_reference<buffer_type>::type buf_type;
         using ptr = typename std::shared_ptr<listener<buffer_type>>;
 
         virtual ~listener() {}
@@ -47,18 +55,11 @@ namespace dcm  {
         virtual void stop() = 0;
         virtual void wait_until_stopped() = 0;
 
-        virtual void on(const bp::symbol &_evt, msg_handler_t<buffer_type> _handler) {
-            message_handlers_.emplace(_evt, _handler);
-        };
-        virtual void off(const bp::symbol &_evt) {
-            message_handlers_.erase(_evt);
-        };
+        handler<session_handler_t<buffer_type>>     on_connect;
+        handler<session_error_handler_t<buffer_type>>     on_error;
+        handler<session_msg_handler_t<buffer_type>> on_message;
 
-        connect_handler_t<buffer_type>                    on_connect;
-        msg_handler_t<buffer_type>                        on_message;
-        event_matcher_t<buffer_type>                        event_matcher;
     };
-
 
     using default_listener = listener<>;
 }

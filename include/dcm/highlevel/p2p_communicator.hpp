@@ -2,15 +2,15 @@
 #define INTERPROCESS_P2P_COMMUNICATOR_HPP
 
 #include "../core/defs.hpp"
-#include "../core/sender.hpp"
+#include "dcm/core/multicast.hpp"
 #include "../listener_factory.hpp"
-#include "event_listener.hpp"
+#include "event.hpp"
 #include <binelpro/structure.hpp>
 #include <memory>
 namespace dcm  {
 
     template <bp::symbol::hash_type serializer_type>
-    class p2p : public event_listener<serializer_type> {
+    class p2p : public event<serializer_type> {
     public:
         using ptr = std::shared_ptr<p2p<serializer_type>>;
         std::function<void(const bp::structure::ptr)> on_send_greeting;

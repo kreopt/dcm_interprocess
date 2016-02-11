@@ -18,8 +18,7 @@ namespace dcm  {
         // TODO: only for buffers with .data() method
 
         template<typename socket_type, typename buffer_type = dcm::buffer >
-        class listener_session : public dcm::session<buffer_type>,
-                                 public std::enable_shared_from_this<dcm::session<buffer_type>> {
+        class listener_session : public dcm::session<buffer_type> {
         private:
             std::shared_ptr<streamsocket::socket<socket_type>>         socket_;
             dcm::processing_queue<buffer_type>   handler_queue_;
@@ -59,20 +58,18 @@ namespace dcm  {
                 reader_ = std::make_shared<reader<socket_type>>(socket_);
                 writer_ = std::make_shared<writer<socket_type>>(socket_);
 
-                this->writer_->on_fail = [this](const asio::error_code &error) {
+                this->writer_->on_fail = [this](const std::error_code &error) {
                     if (error) {
                         Log::d("writer: "s + error.message());
                         eof_ = true;
-                        // TODO: pass error to on_error function
-                        if (on_error) on_error(this->shared_from_this());
+                        this->on_error.call(this->shared_from_this(), error);
                     }
                 };
-                this->reader_->on_fail = [this](const asio::error_code &error) {
+                this->reader_->on_fail = [this](const std::error_code &error) {
                     if (error) {
                         Log::d("reader: "s + error.message());
                         eof_ = true;
-                        // TODO: pass error to on_error function
-                        if (on_error) on_error(this->shared_from_this());
+                        this->on_error.call(this->shared_from_this(), error);
                     }
                 };
 
@@ -81,10 +78,7 @@ namespace dcm  {
             }
 
             virtual ~listener_session() {
-                if (socket_->is_open()) {
-                    socket_->close();
-                }
-                handler_queue_.stop();
+                stop();
                 handler_queue_.wait_until_stopped();
                 Log::d("destroy session");
             }
@@ -101,9 +95,18 @@ namespace dcm  {
                 read_header_=true;
                 read(BLOCK_DESCRIPTOR_SIZE);
                 started_ = true;
-                handler_queue_.on_message = this->on_message;
+                handler_queue_.on_message = [this](buffer_type &&_buf){
+                    this->on_message.call(this->shared_from_this(), std::forward<buffer_type>(_buf));
+                };
                 handler_queue_.start();
-                if (on_connect) on_connect(this->shared_from_this());
+                this->on_connect.call(this->shared_from_this());
+            }
+
+            virtual void stop() override {
+                if (socket_->is_open()) {
+                    socket_->close();
+                }
+                handler_queue_.stop();
             }
 
             // Overloads
@@ -111,9 +114,9 @@ namespace dcm  {
                 return socket_;
             }
 
-            dcm::msg_handler_t<buffer_type>                    on_message;
-            std::function<void(typename session<buffer_type>::ptr _session)> on_error;
-            dcm::connect_handler_t<buffer_type> on_connect;
+//            dcm::msg_handler_t<buffer_type>                    on_message;
+//            std::function<void(typename session<buffer_type>::ptr _session)> on_error;
+//            dcm::connect_handler_t<buffer_type> on_connect;
         };
     }
 }
