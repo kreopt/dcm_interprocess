@@ -94,6 +94,12 @@ namespace dcm  {
             }
         }
 
+        void send(const dcm::buffer &_buf) {
+            if (sender_) {
+                sender_->send(_buf);
+            }
+        }
+
         void send(const bp::symbol &_evt, bp::structure::ptr &&_data = nullptr) {
             if (sender_) {
                 auto event = bp::structure::create();

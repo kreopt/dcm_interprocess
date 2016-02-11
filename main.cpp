@@ -12,7 +12,7 @@ int main(){
     auto buf = dcm::buffer(new char[1920*1080*3], 1920*1080*3);
 
     listener->on_message = [](dcm::buffer &&_buf){
-//        Log::d("received");
+        Log::d("received");
     };
 
     sender->on_connect=[](){
@@ -26,7 +26,7 @@ int main(){
     }
     listener->start();
 
-    sender->close();
+    sender->close(true);
     listener->stop();
     listener->wait_until_stopped();
     return 0;
