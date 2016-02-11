@@ -4,7 +4,6 @@
 #include <binelpro/symbol.hpp>
 #include "streamsocket/sender.hpp"
 #include "ipc/sender.hpp"
-#include "http/sender.hpp"
 
 namespace dcm  {
 

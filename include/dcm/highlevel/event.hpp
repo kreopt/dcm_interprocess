@@ -19,17 +19,17 @@ namespace dcm {
         typename lptr listener_;
     public:
         explicit event(const lptr &_listener) : listener_(_listener) {
-            listener_->on_message.set([](const sptr &_sess, buffer_type &&_buf){
+            listener_->on_message.set("event"_sym, [](const sptr &_sess, buffer_type &&_buf){
                 try {
                     auto event_package = bp::structure::create_from_string<serializer_type>(_buf);
                     auto event = event_package->get("event")->as_symbol();
-                    on_event.call(event, event_package->get("data"));
+                    on_event.call(_sess, event, event_package->get("data"));
                 } catch (bp::structure::structure_error &_e) {
                     Log::e("Failed to parse structure: "s + _e.what());
                 }
             });
         }
-        handler<std::function<void(const sptr&, bp::structure&&)>>         on_event;
+        handler<std::function<void(const sptr&, const bp::symbol &, bp::structure&&)>>         on_event;
     };
 
     template <bp::symbol::hash_type serializer_type, typename buffer_type = dcm::buffer,
