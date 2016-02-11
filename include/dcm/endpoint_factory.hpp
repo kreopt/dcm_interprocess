@@ -4,8 +4,10 @@
 #include <binelpro/symbol.hpp>
 #include "streamsocket/sender.hpp"
 #include "ipc/sender.hpp"
+#include "http/sender.hpp"
 
 namespace dcm  {
+
     template <typename buffer_type = dcm::buffer>
     inline typename endpoint<buffer_type>::ptr make_endpoint(const std::string &_ep) {
         // TODO: remove unix type

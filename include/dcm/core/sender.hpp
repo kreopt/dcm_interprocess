@@ -16,7 +16,6 @@ namespace dcm  {
         explicit sender_error(const char* _reason): dcm::exception(_reason) {}
     };
 
-    const size_t QUEUE_SIZE = 1024*1024*1024;       // TODO: make it configurable
     template <typename buffer_type = dcm::buffer >
     class sender {
         struct queue_item {

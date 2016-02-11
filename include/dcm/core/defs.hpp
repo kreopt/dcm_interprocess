@@ -14,17 +14,22 @@ namespace dcm  {
     const uint32_t BLOCK_DESCRIPTOR_SIZE = sizeof(block_descriptor_t);
     const size_t   MQ_SIZE = 100;
     const size_t   MQ_AMOUNT = 100;
+    const size_t QUEUE_SIZE = 1024 * 1024 * 10;
 
     using namespace bp::literals;
     using namespace std::string_literals;
 
     template <typename msg_type>
     using msg_handler_t = std::function<void(msg_type &&)>;
+    template <typename msg_type>
+    using event_matcher_t = std::function<msg_type(const msg_type &)>;
+
 
     enum class protocol : bp::symbol::hash_type {
         ipc = "ipc"_hash,
         p2pipc = "p2pipc"_hash,
-        tcp = "tcp"_hash
+        tcp = "tcp"_hash,
+        http = "http"_hash
     };
 
     inline std::pair<std::string, std::string> parse_endpoint(const std::string &_ep) {

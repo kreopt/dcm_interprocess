@@ -20,7 +20,6 @@ using asio::ip::tcp;
 
 namespace dcm  {
     namespace streamsocket {
-        const size_t QUEUE_SIZE = 1024*1024*1024;       // TODO: make it configurable
         namespace {
             template<typename protocol_type, typename buffer_type = dcm::buffer>
             class endpoint_impl : public endpoint<buffer_type>,

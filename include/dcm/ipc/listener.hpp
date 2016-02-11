@@ -19,8 +19,6 @@
 namespace dcm  {
     namespace ipc {
         namespace {
-            const size_t QUEUE_SIZE = 1024 * 1024 * 1024;
-
             using namespace boost::interprocess;
             // TODO: use unix socket or windows named pipe for message queue
 

@@ -4,6 +4,7 @@
 #include <binelpro/symbol.hpp>
 #include "streamsocket/listener.hpp"
 #include "ipc/listener.hpp"
+#include "http/listener.hpp"
 
 namespace dcm  {
     template <typename buffer_type = dcm::buffer>
