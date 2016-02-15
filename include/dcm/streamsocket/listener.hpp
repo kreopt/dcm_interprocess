@@ -114,11 +114,13 @@ namespace dcm  {
             virtual std::string get_endpoint() const override { return ep_; }
             virtual void start() override {
                 Log::d("Starting "s+ep_);
-                server_thread_ = std::thread([this]() {
-                    start_accept();
-                    io_service_->run();
-                    Log::d("io stopped");
-                });
+                if (!is_running()) {
+                    server_thread_ = std::thread([this]() {
+                        start_accept();
+                        io_service_->run();
+                        Log::d("io stopped");
+                    });
+                }
             }
             virtual void stop() override {
                 if (!io_service_->stopped()) {
