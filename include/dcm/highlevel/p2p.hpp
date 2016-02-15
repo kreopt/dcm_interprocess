@@ -25,7 +25,7 @@ namespace dcm  {
         typename listener<buffer_type>::ptr  listener_;
         typename std::shared_ptr<dcm::event<serializer_type>>     event_;
 
-        using event_handler_t = std::function<void(const bp::structure&)>;
+        using event_handler_t = std::function<void(const bp::structure::ptr&)>;
 
         std::unordered_map<bp::symbol, event_handler_t> event_handlers;
 
@@ -48,7 +48,7 @@ namespace dcm  {
             wait_until_stopped();
         }
 
-        void handle_message(const typename session<buffer_type>::ptr&, const bp::symbol &_evt, bp::structure&& _data) {
+        void handle_message(const typename session<buffer_type>::ptr&, const bp::symbol &_evt, bp::structure::ptr&& _data) {
             if (event_handlers.count(_evt)) {
                 event_handlers.at(_evt)(_data);
             }
@@ -81,11 +81,11 @@ namespace dcm  {
             start(listener_, false);
         };
 
-        void start(const dcm::listener<dcm::buffer>::ptr _listener, bool _external = true) {
+        void start(const typename dcm::listener<buffer_type>::ptr &_listener, bool _external = true) {
             listener_ep_ = _listener->get_endpoint();
             external_listener_ = _external;
             listener_ = _listener;
-            event_ = std::make_shared<event>(listener_);
+            event_ = std::make_shared<event<serializer_type, buffer_type>>(listener_);
             event_->on_event.set_default(std::bind(&p2p<serializer_type, buffer_type>::handle_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
             listener_->start();
             if (sender_) {

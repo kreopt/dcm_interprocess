@@ -16,10 +16,10 @@ namespace dcm {
     class event {
         using lptr = typename listener<buffer_type>::ptr;
         using sptr = typename session<buffer_type>::ptr;
-        typename lptr listener_;
+        lptr listener_;
     public:
         explicit event(const lptr &_listener) : listener_(_listener) {
-            listener_->on_message.set("event"_sym, [](const sptr &_sess, buffer_type &&_buf){
+            listener_->on_message.set("event"_sym, [this](const sptr &_sess, const buffer_type &_buf){
                 try {
                     auto event_package = bp::structure::create_from_string<serializer_type>(_buf);
                     auto event = event_package->get("event")->as_symbol();
@@ -29,16 +29,16 @@ namespace dcm {
                 }
             });
         }
-        handler<std::function<void(const sptr&, const bp::symbol &, bp::structure&&)>>         on_event;
+        handler<std::function<void(const sptr&, const bp::symbol &, bp::structure::ptr&&)>>         on_event;
     };
 
     template <bp::symbol::hash_type serializer_type, typename buffer_type = dcm::buffer,
             class = typename std::enable_if<std::is_convertible<std::string, buffer_type>::value>::type>
-    buffer_type make_event(const bp::symbol _evt, const bp::structure &_struct) {
+    buffer_type make_event(const bp::symbol _evt, const bp::structure::ptr &_struct) {
         auto event = bp::structure::create();
         event->emplace({
                                {"event"_sym, _evt},
-                               {"data"_dym, _struct}
+                               {"data"_sym, *_struct}
                        });
         return event->stringify<serializer_type>();
     };
