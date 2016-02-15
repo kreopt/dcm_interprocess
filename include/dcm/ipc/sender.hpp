@@ -46,6 +46,10 @@ namespace dcm  {
                     }
                 };
 
+                virtual void send(const buffer_type &_buf) const override {
+                    send(buffer_type(_buf));
+                };
+
                 virtual void send(buffer_type &&_buf) const override {
                     if (!mq_) {
                         connected_ = false;

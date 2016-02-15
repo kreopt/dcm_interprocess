@@ -31,6 +31,7 @@ namespace dcm  {
         virtual std::string get_endpoint() const = 0;
         virtual bool connected() const = 0;
         virtual void connect() = 0;
+        virtual void send(const buffer_type &_buf) const = 0;
         virtual void send(buffer_type &&_buf) const = 0;
 //        virtual void multicast_send(const std::string _multicast_id, buffer_type &&_buf) const = 0;
         virtual void close(bool wait_queue=false) = 0;

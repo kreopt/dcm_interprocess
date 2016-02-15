@@ -126,10 +126,18 @@ namespace dcm  {
                     });
                 }
 
+                virtual void send(const buffer_type &_buf) const override {
+                    // TODO: multicast queue. watch connection state (disconnected, connecting, connected)
+                    if (connected_) {
+                        this->writer_->write(buffer_type(_buf));
+                    } else {
+                        Log::e("failed to send: client disconnected");
+                    }
+                }
                 virtual void send(buffer_type &&_buf) const override {
                     // TODO: multicast queue. watch connection state (disconnected, connecting, connected)
                     if (connected_) {
-                        this->writer_->write(std::forward<buffer_type>(_buf));
+                        this->writer_->write(std::move(_buf));
                     } else {
                         Log::e("failed to send: client disconnected");
                     }
