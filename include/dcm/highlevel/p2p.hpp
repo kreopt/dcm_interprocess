@@ -11,7 +11,7 @@
 namespace dcm  {
 
     template <bp::symbol::hash_type serializer_type, typename buffer_type = dcm::buffer>
-    class p2p {
+    class p2p : public std::enable_shared_from_this<p2p<serializer_type, buffer_type>> {
     public:
         using ptr = std::shared_ptr<p2p<serializer_type>>;
         std::function<void(const bp::structure::ptr)> on_send_greeting;
@@ -54,8 +54,9 @@ namespace dcm  {
             }
         }
 
-        void on(const bp::symbol &_evt, event_handler_t _handler) {
+        p2p::ptr on(const bp::symbol &_evt, event_handler_t _handler) {
             event_handlers[_evt] = _handler;
+            return this->shared_from_this();
         }
 
         void connect(const std::string &_endpoint, bool greet) {
