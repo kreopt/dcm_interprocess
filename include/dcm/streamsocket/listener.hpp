@@ -44,8 +44,10 @@ namespace dcm  {
             std::set<session_ptr>                   sessions_;
             std::thread                             server_thread_;
             std::mutex                              session_mutex_;
+            std::mutex                              start_mutex_;
             asio::signal_set                        signals_;
             std::string                             ep_;
+            std::atomic_bool stopped_;
 
             // Event handlers
             void handle_accept(session_ptr session, const asio::error_code &error) {
@@ -98,7 +100,7 @@ namespace dcm  {
             // Constructor
             explicit listener_impl(const std::string &_endpoint) :
                     io_service_(std::make_shared<asio::io_service>()),
-                    signals_(*io_service_), ep_(_endpoint) {
+                    signals_(*io_service_), ep_(_endpoint), stopped_(true) {
                 prepare_endpoint();
                 endpoint_type ep = dcm::streamsocket::make_endpoint<endpoint_type>(ep_, *io_service_);
                 acceptor_ = std::make_shared<acceptor_type>(*io_service_, ep);
@@ -113,12 +115,15 @@ namespace dcm  {
             virtual bool is_running() const { return !io_service_->stopped(); };
             virtual std::string get_endpoint() const override { return ep_; }
             virtual void start() override {
-                Log::d("Starting "s+ep_);
-                if (!is_running()) {
+                std::lock_guard<std::mutex> lck(start_mutex_);
+                if (stopped_) {
+                    Log::d("Starting "s+ep_);
+                    stopped_ = false;
                     server_thread_ = std::thread([this]() {
                         start_accept();
                         io_service_->run();
                         Log::d("io stopped");
+                        stopped_ = true;
                     });
                 }
             }

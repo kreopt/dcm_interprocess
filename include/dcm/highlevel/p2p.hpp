@@ -79,7 +79,6 @@ namespace dcm  {
             external_listener_ = false;
             listener_ep_ = _endpoint;
             listener_ = make_listener(_endpoint);
-            listener_->start();
             start(listener_, false);
         };
 
@@ -88,6 +87,9 @@ namespace dcm  {
             external_listener_ = _external;
             listener_ = _listener;
             event_ = std::make_shared<event<serializer_type, buffer_type>>(listener_);
+            if (!listener_->is_running()) {
+                listener_->start();
+            }
             event_->on_event.set_default(std::bind(&p2p<serializer_type, buffer_type>::handle_message, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
             if (sender_) {
                 send_greeting();
